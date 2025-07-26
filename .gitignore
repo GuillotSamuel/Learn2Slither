@@ -19,3 +19,6 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+
+# Models and checkpoints
+models/models_eval_q_learning/end_model.pkl
