@@ -1,0 +1,7 @@
+pyyaml
+numpy
+matplotlib
+pygame
+flake8
+pickle
+random

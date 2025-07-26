@@ -1,0 +1,21 @@
+# Environnement virtuel
+my_env/
+venv/
+
+# Fichiers Python compilés
+__pycache__/
+*.py[cod]
+
+# Fichiers de log ou de debug
+*.log
+
+# Fichiers système ou d'IDE
+.DS_Store
+*.swp
+.vscode/
+.idea/
+
+# Dépendances (au cas où)
+*.egg-info/
+dist/
+build/

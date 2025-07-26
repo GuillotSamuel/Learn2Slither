@@ -1,0 +1,46 @@
+Generate a clear and concise Python docstring for the following function.
+The docstring should include:
+1. A short description of the function's purpose.
+2. A more detailed explanation of how the function works.
+3. A description of each parameter (with type) under an "Args:" section.
+4. The return value (with type) under a "Returns:" section.
+5. If a comment is already in the function pasted, ignore it and create your own comment.
+6. Only return the new comment generated, DO NOT RETURN THE FULL FUNCTION OR ANY OTHER TEXT/EXPLICATION
+7. If I paste other functions after this message, do the same for them.
+8. I will probably sometimes put more than one function at the same time, generate as many comments as functions in the message.
+9. The comments needs to respect the FLAKE8 norm so limit the size of the lines.
+10. An example usage under an "Example:" section.
+
+Follow PEP 257 and Google-style docstring conventions.
+
+Here is the function:
+
+[PASTE YOUR FUNCTION HERE]
+
+Example format to follow:
+
+"""
+Moves the snake in the specified direction and updates its position.
+
+This function updates the snake's head position based on the given direction
+("UP", "DOWN", "LEFT", "RIGHT"). It inserts the new head at the beginning of
+the snake body list and removes the last element to maintain the same length.
+
+Args:
+    direction (str): The direction to move the snake. Must be one of
+        "UP", "DOWN", "LEFT", or "RIGHT".
+    snake_body (list[tuple[int, int]]): A list of (x, y) coordinates
+        representing the snake's body segments, where the first element
+        is the head.
+
+Returns:
+    list[tuple[int, int]]: The updated list of snake body coordinates after
+    moving in the specified direction.
+
+Example:
+    >>> snake = [(5, 5), (5, 4), (5, 3)]
+    >>> move_snake("UP", snake)
+    [(5, 4), (5, 5), (5, 4)]
+"""
+
+Function to comment :
