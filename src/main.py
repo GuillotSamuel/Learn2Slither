@@ -101,16 +101,26 @@ def main():
                         default='models',
                         help='Path to the model folder (default: models)')
     parser.add_argument('--episode_logs',
-                        type=bool,
-                        default=True,
-                        help='Activate episode logs when training or evaluating (default: True)')
+                        action='store_true',
+                        default=False,
+                        help='Activate episode logs when training or evaluating (default: False)')
+    parser.add_argument('--no_episode_logs',
+                        action='store_true',
+                        default=False,
+                        help='Deactivate episode logs when training or evaluating')
 
     args = parser.parse_args()
+
+    # Handle episode_logs logic: default False, but can be enabled with --episode_logs
+    episode_logs_enabled = args.episode_logs
+    if args.no_episode_logs:
+        episode_logs_enabled = False
 
     # python main.py --mode train --episodes 10000 --display
     if args.mode == 'train':
         episodes = args.episodes if args.episodes is not None\
             else DEFAULT_TRAINING_EPISODES
+        print(f"episode logs: {episode_logs_enabled}")
         trainer = Trainer(display_training=args.display,
                           board_size=args.board_size,
                           display_speed=args.display_speed,
@@ -119,7 +129,7 @@ def main():
                           num_episodes=episodes,
                           training_method=args.training_method,
                           model_folder_path=args.model_folder_path,
-                          episode_logs=args.episode_logs)
+                          episode_logs=episode_logs_enabled)
         trainer.train(episodes)
     # python main.py --mode evaluate --episodes 10 --model models/end_model.pkl
     elif args.mode == 'evaluate':
@@ -132,7 +142,7 @@ def main():
                           render_mode=args.render_mode,
                           training_method=args.training_method,
                           model_folder_path=args.model_folder_path,
-                          episode_logs=args.episode_logs)
+                          episode_logs=episode_logs_enabled)
         trainer.evaluate(model_path, episodes)
     # python main.py --mode play --model models/end_model.pkl
     elif args.mode == 'play':
@@ -143,7 +153,7 @@ def main():
                           render_mode=args.render_mode,
                           training_method=args.training_method,
                           model_folder_path=args.model_folder_path,
-                          episode_logs=args.episode_logs)
+                          episode_logs=episode_logs_enabled)
         trainer.evaluate(model_path, num_episodes=args.num_game)
     # python main.py --mode manual
     elif args.mode == 'manual':

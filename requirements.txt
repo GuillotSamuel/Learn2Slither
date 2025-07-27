@@ -3,5 +3,4 @@ numpy
 matplotlib
 pygame
 flake8
-pickle
-random
+psutil
