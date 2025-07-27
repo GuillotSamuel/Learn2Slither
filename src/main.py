@@ -1,6 +1,6 @@
 # src/main.py
 import argparse
-from trainer import Trainer
+from trainers.trainer import Trainer
 from manual import manual_mode
 from utils import min_100
 
