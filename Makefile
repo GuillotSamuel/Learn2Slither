@@ -60,21 +60,6 @@ setup_venv:
 		echo "Virtual environment setup complete. Use 'source venv/bin/activate' to activate it."; \
 	fi
 
-# Activate the project's virtual environment (deactivates any current venv first)
-activate_venv:
-	@echo "Switching to project virtual environment..."
-	@if [ -d venv ]; then \
-		echo "Virtual environment found. To activate it, run:"; \
-		echo "source venv/bin/activate"; \
-		echo ""; \
-		echo "Or run this command directly:"; \
-		echo "deactivate 2>/dev/null || true && source venv/bin/activate"; \
-	else \
-		echo "Virtual environment not found. Creating it first..."; \
-		$(MAKE) setup_venv; \
-		echo "Now run: source venv/bin/activate"; \
-	fi
-
 # Install dependencies from requirements.txt
 deps:
 	@echo "Installing Python dependencies..."

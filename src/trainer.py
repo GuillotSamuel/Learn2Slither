@@ -1240,7 +1240,7 @@ class Trainer:
         """
         if self.training_method == 'deep_q_learning':
             self.evaluate_deep_q_learning(model_path, num_episodes)
-        elif self.training_method == 'q_learning':
+        elif self.training_method == 'q_learning' or self.training_method == 'q_learning_multithreaded':
             self.evaluate_q_learning(model_path, num_episodes)
         else:
             raise ValueError(f"Unknown evaluation method: {self.training_method}")
