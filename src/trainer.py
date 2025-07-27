@@ -1325,13 +1325,13 @@ class Trainer:
             total_steps.append(steps)
             total_ratios.append(ratio)
 
-            if self.episode_logs:
-                print(f"[Evaluation] Episode {episode + 1}/{num_episodes} - "
-                      f"Score: {total_reward}, "
-                      f"Length: {len(board.snake)}, "
-                      f"Steps: {steps}, "
-                      f"Ratio: {ratio:.4f}, "
-                      f"Board Size: {current_board_size}")
+            # if self.episode_logs:
+            print(f"[Evaluation] Episode {episode + 1}/{num_episodes} - "
+                    f"Score: {total_reward}, "
+                    f"Length: {len(board.snake)}, "
+                    f"Steps: {steps}, "
+                    f"Ratio: {ratio:.4f}, "
+                    f"Board Size: {current_board_size}")
 
         print("\n--- Q-learning Evaluation Summary ---"
               f"Max Length: {np.max(total_lengths)}"
@@ -1421,18 +1421,18 @@ class Trainer:
             total_steps.append(steps)
             total_ratios.append(ratio)
 
-            if self.episode_logs:
-                print(f"[Evaluation] Episode {episode + 1}/{num_episodes} - "
-                      f"Score: {total_reward}, "
-                      f"Length: {len(board.snake)}, "
-                      f"Steps: {steps}, "
-                      f"Ratio: {ratio:.4f}, "
-                      f"Board Size: {current_board_size}")
+            # if self.episode_logs:
+            print(f"[Evaluation] Episode {episode + 1}/{num_episodes} - "
+                    f"Score: {total_reward}, "
+                    f"Length: {len(board.snake)}, "
+                    f"Steps: {steps}, "
+                    f"Ratio: {ratio:.4f}, "
+                    f"Board Size: {current_board_size}")
 
         print("\n--- Evaluation Summary ---"
-              f"Max Length: {np.max(total_lengths)}"
-              f"Average Length: {np.mean(total_lengths):.2f}"
-              f"Average Steps: {np.mean(total_steps):.2f}"
+              f"Max Length: {np.max(total_lengths)} "
+              f"Average Length: {np.mean(total_lengths):.2f} "
+              f"Average Steps: {np.mean(total_steps):.2f} "
               f"Average Ratio: {np.mean(total_ratios) * 100:.2f}%")
 
     def _state_to_key(self, state):

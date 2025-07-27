@@ -13,9 +13,9 @@
 .PHONY: help clean install deps check train train_random_map train_multithreaded train_random_map_multithreaded train_deep_q_learning train_deep_q_learning_random_map evaluate evaluate_all evaluate_random_map evaluate_multithreaded evaluate_random_map_multithreaded evaluate_deep_q_learning evaluate_random_map_deep_q_learning play play_random_map play_multithreaded play_random_map_multithreaded play_deep_q_learning play_random_map_deep_q_learning manual
 
 # Python interpreter and main script configuration
-PYTHON ?= python3
+PYTHON ?= $(shell if [ -d venv ]; then echo "venv/bin/python"; else echo "python3"; fi)
 MAIN = src/main.py
-PIP ?= pip3
+PIP ?= $(shell if [ -d venv ]; then echo "venv/bin/pip"; else echo "pip3"; fi)
 
 # Model folder paths for storing trained models
 MODEL_FOLDER=models
@@ -45,12 +45,48 @@ EPISODES_EVAL ?= 1000      # Default episodes for evaluation
 # ============================================================================#
 
 # Install Python dependencies
-install: deps
+install: setup_venv deps check
+
+# Create venv and activate it
+setup_venv:
+	@echo "Checking if virtual environment exists..."
+	@if [ -d venv ]; then \
+		echo "Virtual environment already exists. Skipping setup."; \
+	else \
+		echo "Virtual environment not found. Creating a new one."; \
+		echo "Setting up Python virtual environment..."; \
+		python3 -m venv venv; \
+		echo "Virtual environment created successfully."; \
+		echo "Virtual environment setup complete. Use 'source venv/bin/activate' to activate it."; \
+	fi
+
+# Activate the project's virtual environment (deactivates any current venv first)
+activate_venv:
+	@echo "Switching to project virtual environment..."
+	@if [ -d venv ]; then \
+		echo "Virtual environment found. To activate it, run:"; \
+		echo "source venv/bin/activate"; \
+		echo ""; \
+		echo "Or run this command directly:"; \
+		echo "deactivate 2>/dev/null || true && source venv/bin/activate"; \
+	else \
+		echo "Virtual environment not found. Creating it first..."; \
+		$(MAKE) setup_venv; \
+		echo "Now run: source venv/bin/activate"; \
+	fi
 
 # Install dependencies from requirements.txt
 deps:
 	@echo "Installing Python dependencies..."
-	$(PIP) install -r requirements.txt
+	@if [ -d venv ]; then \
+		echo "Using virtual environment..."; \
+		venv/bin/pip install -r requirements.txt; \
+		venv/bin/pip install --pre torch --index-url https://download.pytorch.org/whl/nightly/cpu; \
+	else \
+		echo "No virtual environment found, using system pip..."; \
+		$(PIP) install -r requirements.txt; \
+		pip3 install --pre torch --index-url https://download.pytorch.org/whl/nightly/cpu; \
+	fi
 
 # Check if Python and dependencies are available
 check:
@@ -69,58 +105,49 @@ clean:
 	find . -type f -name ".DS_Store" -delete
 	@echo "Cleanup completed!"
 
-# Create necessary directories
-setup_dirs:
-	@mkdir -p $(MODEL_Q_LEARNING_FOLDER)
-	@mkdir -p $(MODEL_Q_LEARNING_RANDOM_MAP_FOLDER)
-	@mkdir -p $(MODEL_Q_LEARNING_FOLDER_MULTITHREADED)
-	@mkdir -p $(MODEL_Q_LEARNING_RANDOM_MAP_FOLDER_MULTITHREADED)
-	@mkdir -p $(MODEL_DEEP_LEARNING_FOLDER)
-	@mkdir -p $(MODEL_DEEP_LEARNING_RANDOM_MAP_FOLDER)
-
 # ============================================================================#
 # TRAINING TARGETS                                                            #
 # ============================================================================#
 
 # Train Q-Learning agent on fixed-size board with enhanced rewards
-train: setup_dirs check
+train:
 	@echo "Starting Q-Learning training ($(EPISODES_TRAIN) episodes)..."
 	$(PYTHON) $(MAIN) --mode train --episodes $(EPISODES_TRAIN) --board_size $(BOARD_SIZE) --ultra_rewards --training_method q_learning --model_folder_path $(MODEL_Q_LEARNING_FOLDER) --episode_logs
 
 # Train Q-Learning agent on random board sizes (5-20) for better generalization
-train_random_map: setup_dirs check
+train_random_map:
 	@echo "Starting Q-Learning training on random maps ($(EPISODES_TRAIN) episodes)..."
 	$(PYTHON) $(MAIN) --mode train --episodes $(EPISODES_TRAIN) --board_size 0 --ultra_rewards --training_method q_learning --model_folder_path $(MODEL_Q_LEARNING_RANDOM_MAP_FOLDER) --episode_logs
 
 # Train Q-Learning agent on fixed-size board with enhanced rewards with multithreading (high CPU utilization)
-train_multithreaded: setup_dirs check
+train_multithreaded:
 	@echo "Starting multithreaded Q-Learning training ($(EPISODES_TRAIN) episodes)..."
 	$(PYTHON) $(MAIN) --mode train --episodes $(EPISODES_TRAIN) --board_size $(BOARD_SIZE) --ultra_rewards --training_method q_learning_multithreaded --model_folder_path $(MODEL_Q_LEARNING_FOLDER_MULTITHREADED) --episode_logs
 
 # Train Q-Learning agent with maximum CPU utilization (fewer logs, more threads)
-train_multithreaded_performance: setup_dirs check
+train_multithreaded_performance:
 	@echo "Starting high-performance multithreaded Q-Learning training ($(EPISODES_TRAIN) episodes)..."
 	@echo "This mode maximizes CPU utilization with minimal synchronization overhead"
 	$(PYTHON) $(MAIN) --mode train --episodes $(EPISODES_TRAIN) --board_size $(BOARD_SIZE) --ultra_rewards --training_method q_learning_multithreaded --model_folder_path $(MODEL_Q_LEARNING_FOLDER_MULTITHREADED) --no_episode_logs
 
 # Quick CPU performance test with optimized settings
-test_cpu_performance: setup_dirs check
+test_cpu_performance:
 	@echo "Quick CPU performance test (5000 episodes, optimized for maximum CPU usage)..."
 	@echo "Monitor CPU usage with: htop, top, or watch 'ps -eLf | grep python | wc -l'"
 	$(PYTHON) $(MAIN) --mode train --episodes 5000 --board_size 8 --ultra_rewards --training_method q_learning_multithreaded --model_folder_path $(MODEL_Q_LEARNING_FOLDER_MULTITHREADED) --no_episode_logs
 
 # Train Q-Learning agent on random board sizes (5-20) for better generalization with multithreading
-train_random_map_multithreaded: setup_dirs check
+train_random_map_multithreaded:
 	@echo "Starting multithreaded Q-Learning training on random maps ($(EPISODES_TRAIN) episodes)..."
 	$(PYTHON) $(MAIN) --mode train --episodes $(EPISODES_TRAIN) --board_size 0 --ultra_rewards --training_method q_learning_multithreaded --model_folder_path $(MODEL_Q_LEARNING_RANDOM_MAP_FOLDER_MULTITHREADED) --episode_logs
 
 # Train Deep Q-Learning agent on fixed-size board using neural network
-train_deep_q_learning: setup_dirs check
+train_deep_q_learning:
 	@echo "Starting Deep Q-Learning training (10000 episodes)..."
 	$(PYTHON) $(MAIN) --mode train --episodes 10000 --board_size $(BOARD_SIZE) --ultra_rewards --training_method deep_q_learning --model_folder_path $(MODEL_DEEP_LEARNING_FOLDER) --episode_logs
 
 # Train Deep Q-Learning agent on random board sizes for improved adaptability
-train_deep_q_learning_random_map: setup_dirs check
+train_deep_q_learning_random_map:
 	@echo "Starting Deep Q-Learning training on random maps (10000 episodes)..."
 	$(PYTHON) $(MAIN) --mode train --episodes 10000 --board_size 0 --ultra_rewards --training_method deep_q_learning --model_folder_path $(MODEL_DEEP_LEARNING_RANDOM_MAP_FOLDER) --episode_logs
 
