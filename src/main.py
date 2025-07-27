@@ -93,7 +93,8 @@ def main():
                         default='q_learning',
                         choices=['q_learning',
                                  'deep_q_learning',
-                                 'q_learning_multithreaded'],
+                                 'q_learning_multithreaded',
+                                 'deep_q_learning_full_map'],
                         help='Training method: q_learning or deep_q_learning'
                         ' (default: q_learning)')
     parser.add_argument('--model_folder_path',

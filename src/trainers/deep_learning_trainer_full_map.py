@@ -25,7 +25,7 @@ GAMMA = 0.99
 LEARNING_RATE = 0.001
 
 
-class DeepQLearningTrainer:
+class DeepQLearningTrainerFullMap:
     def __init__(self, display_training=False,
                  display_evaluation=False,
                  board_size=10,

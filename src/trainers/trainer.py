@@ -2,6 +2,7 @@
 from .deep_learning_trainer import DeepQLearningTrainer
 from .q_learning_trainer import QLearningTrainer
 from .q_learning_multithreaded_trainer import QLearningMultiThreadedTrainer
+from .deep_learning_trainer_full_map import DeepQLearningTrainerFullMap
 
 
 class Trainer:
@@ -101,6 +102,8 @@ class Trainer:
             self.spe_trainer = QLearningTrainer(**self.t_params)
         elif self.training_method == 'q_learning_multithreaded':
             self.spe_trainer = QLearningMultiThreadedTrainer(**self.t_params)
+        elif self.training_method == 'deep_q_learning_full_map':
+            self.spe_trainer = DeepQLearningTrainerFullMap(**self.t_params)
         else:
             raise ValueError(f"Unknown training method:"
                              f" {self.training_method}")
