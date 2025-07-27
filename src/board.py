@@ -151,127 +151,31 @@ class Board:
             return (x, y)
         return None
 
-    # def spawn_snake(self):
-    #     """
-    #     Spawns a snake of length 3 at a random valid position and
-    #     direction on the board.
-
-    #     The function selects a random starting position within a
-    #     safe area on the board and attempts to place the snake in
-    #     one of four directions: UP, DOWN, LEFT, or RIGHT. It ensures
-    #     that the snake segments remain within board boundaries and do
-    #     not spawn disconnected. If no valid position is found (e.g.,
-    #     on a very small board), the snake is placed in a fallback
-    #     position near the center with as many segments as possible
-    #     (up to 3).
-
-    #     Args:
-    #     None
-
-    #     Returns:
-    #     None: The snake's position (self.snake) and direction
-    #     (self.direction) are updated in place.
-
-    #     Example:
-    #     >>> game.board_size = 10
-    #     >>> game.spawn_snake()
-    #     >>> len(game.snake)
-    #     3
-    #     >>> game.direction in ['UP', 'DOWN', 'LEFT', 'RIGHT']
-    #     True
-    #     """
-    #     # Calculate valid spawn area
-    #     # - ensure we have room for a 3-segment snake
-    #     min_coord = max(0, 2)
-    #     max_coord = min(self.board_size, self.board_size - 2)
-
-    #     # If board is too small, adjust the spawn area
-    #     if max_coord <= min_coord:
-    #         min_coord = 1 if self.board_size > 2 else 0
-    #         max_coord = (
-    #             self.board_size - 1
-    #             if self.board_size > 2
-    #             else self.board_size
-    #         )
-
-    #     valid_positions = []
-    #     for x in range(min_coord, max_coord):
-    #         for y in range(min_coord, max_coord):
-    #             if x < self.board_size and y < self.board_size:
-    #                 valid_positions.append((x, y))
-
-    #     if not valid_positions:
-    #         center_x = self.board_size // 2
-    #         center_y = self.board_size // 2
-    #         valid_positions = [(center_x, center_y)]
-
-    #     random.shuffle(valid_positions)
-
-    #     for head_pos in valid_positions:
-    #         for direction in ['UP', 'DOWN', 'LEFT', 'RIGHT']:
-    #             segments = [head_pos]
-    #             head_x, head_y = head_pos
-
-    #             for i in range(1, 3):
-    #                 if direction == 'UP':
-    #                     next_pos = (head_x + i, head_y)
-    #                 elif direction == 'DOWN':
-    #                     next_pos = (head_x - i, head_y)
-    #                 elif direction == 'LEFT':
-    #                     next_pos = (head_x, head_y + i)
-    #                 elif direction == 'RIGHT':
-    #                     next_pos = (head_x, head_y - i)
-
-    #                 next_x, next_y = next_pos
-    #                 if (
-    #                     0 <= next_x < self.board_size
-    #                     and 0 <= next_y < self.board_size
-    #                 ):
-    #                     segments.append(next_pos)
-    #                 else:
-    #                     break
-
-    #             if len(segments) == 3:
-    #                 self.snake = segments
-    #                 self.direction = direction
-    #                 return
-
-    #     center_x = max(2, min(self.board_size // 2, self.board_size - 3))
-    #     center_y = max(2, min(self.board_size // 2, self.board_size - 3))
-
-    #     if center_y + 2 < self.board_size:
-    #         snake_segments = [
-    #             (center_x, center_y),
-    #             (center_x, center_y - 1),
-    #             (center_x, center_y - 2)
-    #         ]
-    #         self.direction = 'RIGHT'
-    #     elif center_y - 2 >= 0:
-    #         snake_segments = [
-    #             (center_x, center_y),
-    #             (center_x, center_y + 1),
-    #             (center_x, center_y + 2)
-    #         ]
-    #         self.direction = 'LEFT'
-    #     elif center_x + 2 < self.board_size:
-    #         snake_segments = [
-    #             (center_x, center_y),
-    #             (center_x - 1, center_y),
-    #             (center_x - 2, center_y)
-    #         ]
-    #         self.direction = 'DOWN'
-    #     else:
-    #         snake_segments = [
-    #             (center_x, center_y),
-    #             (center_x + 1, center_y),
-    #             (center_x + 2, center_y)
-    #         ]
-    #         self.direction = 'UP'
-
-    #     self.snake = snake_segments
-    #     print(f"Fallback snake: {self.snake}, direction: {self.direction}")
-
     def spawn_snake(self):
+        """
+        Spawns a snake of length 3 at a random valid position on the board.
+
+        This function attempts to place a 3-segment snake by trying different
+        starting positions and configurations. It supports straight snakes as
+        well as snakes with left or right turns. The snake is positioned with
+        its head first and the direction is automatically determined based on
+        the segment arrangement. If no valid configuration is found, a fallback
+        position is used near the board center.
+
+        Args:
+            None
+
+        Returns:
+            None: Updates self.snake and self.direction attributes in place.
+
+        Example:
+            >>> game.board_size = 10
+            >>> game.spawn_snake()
+            >>> len(game.snake)
+            3
+            >>> game.direction in ['UP', 'DOWN', 'LEFT', 'RIGHT']
+            True
+        """
         directions = ['UP', 'DOWN', 'LEFT', 'RIGHT']
         dir_vectors = {
             'UP': (-1, 0),
