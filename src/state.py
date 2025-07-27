@@ -290,3 +290,63 @@ def get_state_with_display(board, snake, direction):
     visual_representation = generate_visual(board, snake, direction)
 
     return state, visual_representation
+
+
+def get_state_full_map(board, snake, direction):
+    """
+    Generates a state representation based on the entire game board
+    instead of just vision rays.
+
+    This function converts the entire board into a flattened numerical
+    representation that can be used for machine learning algorithms.
+    Each cell type is mapped to a numerical value, and the snake's
+    direction is also encoded as additional features.
+
+    Args:
+        board (list[list[str]]): 2D grid representing the game board.
+        snake (list[tuple[int, int]]): List of (x, y) coordinates
+        representing the snake's body, head first.
+        direction (str): Current direction the snake is facing
+        ('UP', 'LEFT', 'DOWN', 'RIGHT').
+
+    Returns:
+        numpy.ndarray: A column vector representing the entire board
+        state plus direction encoding.
+
+    Example:
+        >>> state = get_state_full_map(board, snake, 'RIGHT')
+        >>> print(state.shape)
+        (104, 1)  # 100 cells + 4 direction features for a 10x10 board
+    """
+    # Map cell types to numerical values
+    cell_mapping = {
+        '0': 0.0,  # Empty space
+        'S': 1.0,  # Snake body
+        'A': 0.5,  # Green apple
+        'R': -0.5, # Red apple
+        'W': -1.0  # Wall
+    }
+    
+    # Flatten the board and convert to numerical representation
+    board_flat = []
+    for row in board:
+        for cell in row:
+            board_flat.append(cell_mapping.get(cell, 0.0))
+    
+    # Encode direction as one-hot vector
+    direction_mapping = {
+        'UP': [1.0, 0.0, 0.0, 0.0],
+        'DOWN': [0.0, 1.0, 0.0, 0.0],
+        'LEFT': [0.0, 0.0, 1.0, 0.0],
+        'RIGHT': [0.0, 0.0, 0.0, 1.0]
+    }
+    
+    direction_encoded = direction_mapping.get(direction, [0.0, 0.0, 0.0, 0.0])
+    
+    # Combine board state and direction
+    full_state = board_flat + direction_encoded
+    
+    # Convert to column vector
+    state_vector = np.array(full_state).reshape(-1, 1)
+    
+    return state_vector
