@@ -7,7 +7,6 @@ import torch.nn as nn
 import threading
 import time
 import matplotlib.pyplot as plt
-from collections import defaultdict
 
 from board import Board
 from state import get_state
@@ -31,15 +30,20 @@ class DeepQLearningTrainer:
         Initializes a Deep Q-Learning trainer for reinforcement learning.
 
         Args:
-            display_training (bool): Whether to visually display the training process.
-            display_evaluation (bool): Whether to visually display the evaluation process.
-            board_size (int): Size of the game board. If 0, uses random sizes between 5-20.
-            display_speed (float): Speed factor controlling display update rate in seconds.
+            display_training (bool): Whether to visually display the
+            training process.
+            display_evaluation (bool): Whether to visually display the
+            evaluation process.
+            board_size (int): Size of the game board. If 0, uses random
+            sizes between 5-20.
+            display_speed (float): Speed factor controlling display update
+            rate in seconds.
             ultra_rewards (bool): Whether to enable enhanced reward scheme.
             render_mode (str): Rendering mode for visuals.
             num_episodes (int): Number of episodes for training.
             model_folder_path (str, optional): Custom path for saving models.
-            episode_logs (bool): Whether to display episode logs during training/evaluation.
+            episode_logs (bool): Whether to display episode logs during
+            training/evaluation.
         """
         self.display_training = display_training
         self.display_evaluation = display_evaluation
@@ -55,7 +59,7 @@ class DeepQLearningTrainer:
         self.display_speed = display_speed
         self.render_mode = render_mode
         self.start_time = time.time()
-        self.model_folder_path = self._generate_model_folder_path(model_folder_path)
+        self.model_folder_path = self._gen_model_folder_path(model_folder_path)
         self.episode_logs = episode_logs
 
         self.scores = []
@@ -65,14 +69,14 @@ class DeepQLearningTrainer:
         self.moves = []
         self.snake_lengths = []
 
-    def _generate_model_folder_path(self, model_folder_path):
+    def _gen_model_folder_path(self, model_folder_path):
         """
         Generates a model folder path based on board size configuration.
 
-        This method creates a default folder path for saving trained models
-        when no custom path is provided. The path includes descriptive suffixes
-        based on the board size configuration to distinguish between different
-        model types.
+        This method creates a default folder path for saving trained
+        models when no custom path is provided. The path includes
+        descriptive suffixes based on the board size configuration to
+        distinguish between different model types.
 
         Args:
             model_folder_path (str or None): Custom path for model storage.
@@ -90,7 +94,7 @@ class DeepQLearningTrainer:
             if self.board_size == 0:
                 size_suffix = "random_map_deep_q"
             else:
-                size_suffix = f"eval_deep_q"
+                size_suffix = "eval_deep_q"
             return f"models_{size_suffix}"
         else:
             return model_folder_path
@@ -99,10 +103,10 @@ class DeepQLearningTrainer:
         """
         Calculates the decay constant k for epsilon-greedy policy.
 
-        This method computes the decay rate parameter used in the exponential
-        decay formula for epsilon in the epsilon-greedy exploration strategy.
-        The decay constant is determined based on the target epsilon value
-        and the total number of training episodes.
+        This method computes the decay rate parameter used in the
+        exponential decay formula for epsilon in the epsilon-greedy
+        exploration strategy. The decay constant is determined based on
+        the target epsilon value and the total number of training episodes.
 
         Args:
             num_episodes (int): Total number of training episodes.
@@ -339,7 +343,8 @@ class DeepQLearningTrainer:
 
             if self.episode_logs:
                 print(f"Episode {episode + 1}/{num_episodes}, "
-                      f"Episode time: {time.time() - episode_start_time:.2f}s, "
+                      f"Episode time: "
+                      f"{time.time() - episode_start_time:.2f}s, "
                       f"Total Reward: {total_reward:.2f}, "
                       f"Epsilon: {self.epsilon:.4f}, "
                       f"Snake length: {len(board.snake)}, "
@@ -378,15 +383,16 @@ class DeepQLearningTrainer:
         Generates a mapping of episode indices to model save labels.
 
         This method creates a dictionary that specifies which episodes should
-        trigger model saves and what labels to use for the saved files. It includes
-        early episodes, milestone episodes, and the final model for comprehensive
-        progress tracking.
+        trigger model saves and what labels to use for the saved files.
+        It includes early episodes, milestone episodes, and the final model
+        for comprehensive progress tracking.
 
         Args:
             num_episodes (int): Total number of training episodes.
 
         Returns:
-            dict[int, str]: Dictionary mapping episode indices to save file labels.
+            dict[int, str]: Dictionary mapping episode indices to save
+            file labels.
 
         Example:
             >>> trainer.get_model_saves(1000)
@@ -433,9 +439,9 @@ class DeepQLearningTrainer:
         Creates and saves comprehensive training metrics visualization.
 
         This method generates a multi-panel plot showing training progress
-        across four key metrics: scores (rewards), snake lengths, length ratios,
-        and number of moves per episode. The visualization is saved as a PNG
-        file in the model folder for later analysis.
+        across four key metrics: scores (rewards), snake lengths, length
+        ratios, and number of moves per episode. The visualization is saved
+        as a PNG file in the model folder for later analysis.
 
         Args:
             None
@@ -521,7 +527,8 @@ class DeepQLearningTrainer:
                 Defaults to 10.
 
         Returns:
-            None: Prints evaluation results to console but doesn't return values.
+            None: Prints evaluation results to console but doesn't return
+            values.
 
         Example:
             >>> trainer = DeepQLearningTrainer()
@@ -584,11 +591,11 @@ class DeepQLearningTrainer:
             total_ratios.append(ratio)
 
             print(f"[Evaluation] Episode {episode + 1}/{num_episodes} - "
-                    f"Score: {total_reward}, "
-                    f"Length: {len(board.snake)}, "
-                    f"Steps: {steps}, "
-                    f"Ratio: {ratio:.4f}, "
-                    f"Board Size: {current_board_size}")
+                  f"Score: {total_reward}, "
+                  f"Length: {len(board.snake)}, "
+                  f"Steps: {steps}, "
+                  f"Ratio: {ratio:.4f}, "
+                  f"Board Size: {current_board_size}")
 
         print("\n--- Deep Q-Learning Evaluation Summary ---"
               f"Max Length: {np.max(total_lengths)} "

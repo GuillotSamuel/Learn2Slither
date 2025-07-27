@@ -191,18 +191,26 @@ class Board:
             head, neck = snake[0], snake[1]
             dx = head[0] - neck[0]  # difference in row (x)
             dy = head[1] - neck[1]  # difference in column (y)
-            
+
             # The snake moves in the direction FROM neck TO head
-            if dx == -1: return 'UP'      # head is above neck
-            if dx == 1: return 'DOWN'     # head is below neck  
-            if dy == -1: return 'LEFT'    # head is left of neck
-            if dy == 1: return 'RIGHT'    # head is right of neck
+            if dx == -1:
+                return 'UP'      # head is above neck
+            if dx == 1:
+                return 'DOWN'     # head is below neck
+            if dy == -1:
+                return 'LEFT'    # head is left of neck
+            if dy == 1:
+                return 'RIGHT'    # head is right of neck
             return 'RIGHT'
 
         def add_pos(pos, delta):
             return (pos[0] + delta[0], pos[1] + delta[1])
 
-        positions = [(x, y) for x in range(self.board_size) for y in range(self.board_size)]
+        positions = [
+            (x, y)
+            for x in range(self.board_size)
+            for y in range(self.board_size)
+        ]
         random.shuffle(positions)
 
         for start in positions:
@@ -210,12 +218,16 @@ class Board:
                 dx1, dy1 = dir_vectors[dir1]
                 second = add_pos(start, (dx1, dy1))
 
-                if not (0 <= second[0] < self.board_size and 0 <= second[1] < self.board_size):
+                if not (0 <= second[0] < self.board_size
+                        and 0 <= second[1] < self.board_size):
                     continue
 
                 # Try straight snake
                 third = add_pos(second, (dx1, dy1))
-                if 0 <= third[0] < self.board_size and 0 <= third[1] < self.board_size:
+                if (
+                    0 <= third[0] < self.board_size
+                    and 0 <= third[1] < self.board_size
+                ):
                     segments = [start, second, third]
                     snake = list(reversed(segments))  # head first
                     self.snake = snake
@@ -230,7 +242,10 @@ class Board:
                 dir2 = right_turn[dir1]
                 dx2, dy2 = dir_vectors[dir2]
                 third = add_pos(second, (dx2, dy2))
-                if 0 <= third[0] < self.board_size and 0 <= third[1] < self.board_size:
+                if (
+                    0 <= third[0] < self.board_size
+                    and 0 <= third[1] < self.board_size
+                ):
                     segments = [start, second, third]
                     snake = list(reversed(segments))  # head first
                     self.snake = snake
@@ -245,7 +260,10 @@ class Board:
                 dir2 = left_turn[dir1]
                 dx2, dy2 = dir_vectors[dir2]
                 third = add_pos(second, (dx2, dy2))
-                if 0 <= third[0] < self.board_size and 0 <= third[1] < self.board_size:
+                if (
+                    0 <= third[0] < self.board_size
+                    and 0 <= third[1] < self.board_size
+                ):
                     segments = [start, second, third]
                     snake = list(reversed(segments))  # head first
                     self.snake = snake
@@ -254,7 +272,9 @@ class Board:
 
         # fallback
         center = self.board_size // 2
-        self.snake = [(center, center + 2), (center, center + 1), (center, center)]
+        self.snake = [(center, center + 2),
+                      (center, center + 1),
+                      (center, center)]
         self.direction = 'LEFT'
 
     def spawn_apples(self):
@@ -497,8 +517,9 @@ class Board:
         if self.steps >= self.max_steps:
             self.done = True
             self.reward = DEAD_REWARD
-            if self.episodes_logs == True:
-                print(f"Game Over! Max steps reached. (maximum: {self.max_steps})")
+            if self.episodes_logs:
+                print(f"Game Over! Max steps reached. "
+                      f"(maximum: {self.max_steps})")
 
         if self.ultra_rewards:
             if self.steps_since_last_green_apple >= 20:
@@ -512,7 +533,7 @@ class Board:
             print("Game Won!")
 
         self.board = self.init_board()
-        
+
         return self.board, self.reward, self.done
 
     def render_in_shell(self):

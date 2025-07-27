@@ -6,7 +6,6 @@ import threading
 import time
 import matplotlib.pyplot as plt
 import pickle
-from collections import defaultdict
 
 from board import Board
 from state import get_state
@@ -29,15 +28,20 @@ class QLearningTrainer:
         Initializes a Q-Learning trainer for reinforcement learning.
 
         Args:
-            display_training (bool): Whether to visually display the training process.
-            display_evaluation (bool): Whether to visually display the evaluation process.
-            board_size (int): Size of the game board. If 0, uses random sizes between 5-20.
-            display_speed (float): Speed factor controlling display update rate in seconds.
+            display_training (bool): Whether to visually display the training
+            process.
+            display_evaluation (bool): Whether to visually display the
+            evaluation process.
+            board_size (int): Size of the game board. If 0, uses random sizes
+            between 5-20.
+            display_speed (float): Speed factor controlling display update rate
+            in seconds.
             ultra_rewards (bool): Whether to enable enhanced reward scheme.
             render_mode (str): Rendering mode for visuals.
             num_episodes (int): Number of episodes for training.
             model_folder_path (str, optional): Custom path for saving models.
-            episode_logs (bool): Whether to display episode logs during training/evaluation.
+            episode_logs (bool): Whether to display episode logs during
+            training/evaluation.
         """
         self.display_training = display_training
         self.display_evaluation = display_evaluation
@@ -51,7 +55,7 @@ class QLearningTrainer:
         self.render_mode = render_mode
         self.start_time = time.time()
         self.q_table_max_size = 0
-        self.model_folder_path = self._generate_model_folder_path(model_folder_path)
+        self.model_folder_path = self._gen_model_folder_path(model_folder_path)
         self.episode_logs = episode_logs
 
         self.scores = []
@@ -62,7 +66,7 @@ class QLearningTrainer:
         self.snake_lengths = []
         self.q_table = {}
 
-    def _generate_model_folder_path(self, model_folder_path):
+    def _gen_model_folder_path(self, model_folder_path):
         """
         Generates a model folder path based on board size configuration.
 
@@ -87,7 +91,7 @@ class QLearningTrainer:
             if self.board_size == 0:
                 size_suffix = "random_size"
             else:
-                size_suffix = f"eval_q_learning"
+                size_suffix = "eval_q_learning"
             return f"models_{size_suffix}"
         else:
             return model_folder_path
@@ -195,9 +199,9 @@ class QLearningTrainer:
 
         This method computes the upper bound on the number of possible states
         based on the state representation dimensions. It considers ray-based
-        vision with four directions and four cell types, but applies a reduction
-        factor based on board size since not all theoretical states are reachable
-        in practice.
+        vision with four directions and four cell types, but applies a
+        reduction factor based on board size since not all theoretical states
+        are reachable in practice.
 
         Args:
             None
@@ -214,59 +218,62 @@ class QLearningTrainer:
         max_distance = 10  # From encode_vision function in state.py
         rays_count = 4     # front, left, right, back
         cell_types = 4     # W, S, A, R
-        
+
         discrete_values_per_dimension = max_distance + 1
-        theoretical_max = discrete_values_per_dimension ** (rays_count * cell_types)
-        
+        theoretical_max = (discrete_values_per_dimension
+                           ** (rays_count * cell_types))
+
         max_board_distance = min(self.board_size - 1, max_distance)
         practical_values_per_dimension = max_board_distance + 1
-        
-        # Estimate based on board size - larger boards have more possible states
+
+        # Estimate based on board size
         if self.board_size == 0:  # Random board sizes
             avg_board_size = 12.5
             size_factor = avg_board_size / 10
         else:
             size_factor = self.board_size / 10
-        
+
         practical_max = int(
-            (practical_values_per_dimension ** (rays_count * cell_types)) 
-            * (size_factor ** 2)  # Quadratic scaling with board size
-            * 0.01  # Constraint factor (only ~1% of theoretical states are reachable)
+            (practical_values_per_dimension ** (rays_count * cell_types))
+            * (size_factor ** 2)
+            * 0.01
         )
-        
+
         # Set bounds to reasonable values
-        min_size = 1000    # Minimum reasonable size
-        max_size = 1000000 # Maximum to prevent memory issues
-        
+        min_size = 1000  # Minimum reasonable size
+        max_size = 1000000  # Maximum to prevent memory issues
+
         estimated_size = max(min_size, min(practical_max, max_size))
         self.q_table_max_size = estimated_size
-        
+
         print(
             f"Q-table size estimation:\n"
             f"  Board size: {self.board_size}\n"
             f"  Theoretical max states: {theoretical_max:,}\n"
             f"  Practical max distance: {max_board_distance}\n"
             f"  Estimated reachable states: {estimated_size:,}\n"
-            f"  Memory estimate: ~{estimated_size * 3 * 8 / 1024 / 1024:.1f} MB"
+            f"  Memory estimate: ~"
+            f"{estimated_size * 3 * 8 / 1024 / 1024:.1f} MB"
         )
 
     def train(self, num_episodes):
         """
-        Trains the Q-learning agent using epsilon-greedy policy and Q-table updates.
+        Trains the Q-learning agent using epsilon-greedy policy
+        and Q-table updates.
 
         This method implements the core Q-learning algorithm with a tabular
         representation. It initializes the Q-table, runs training episodes with
-        decaying epsilon exploration, updates Q-values using the Bellman equation,
-        and periodically saves model checkpoints. Training metrics are collected
-        and optionally displayed visually for selected episodes.
+        decaying epsilon exploration, updates Q-values using the Bellman
+        equation, and periodically saves model checkpoints. Training metrics
+        are collected and optionally displayed visually for selected episodes.
 
         Args:
-            num_episodes (int): Number of training episodes to run the Q-learning
-                algorithm for.
+            num_episodes (int): Number of training episodes to run the
+                Q-learning algorithm for.
 
         Returns:
-            None: Updates internal Q-table and saves training metrics, but doesn't
-                return values.
+            None: Updates internal Q-table and saves training metrics, but
+                doesn't return values.
 
         Example:
             >>> trainer = QLearningTrainer(board_size=10, num_episodes=1000)
@@ -280,7 +287,7 @@ class QLearningTrainer:
         # Initialize Q-table as a dictionary
         self.q_table = {}
         learning_rate = 0.1
-        
+
         for episode in range(num_episodes):
             episode_start_time = time.time()
             if self.board_size == 0:
@@ -315,16 +322,16 @@ class QLearningTrainer:
                 # Initialize Q-values for new state if not seen before
                 if state_key not in self.q_table:
                     self.q_table[state_key] = [0.0, 0.0, 0.0]
-                
+
                 # Select action using epsilon-greedy policy
                 if random.random() < self.epsilon:
                     action_idx = random.randint(0, 2)
                 else:
                     action_idx = np.argmax(self.q_table[state_key])
-                
+
                 actions = ['FORWARD', 'LEFT', 'RIGHT']
                 action_str = actions[action_idx]
-                
+
                 next_state_raw, reward, done = board.step(action_str)
                 next_state = get_state(board.board,
                                        board.snake,
@@ -342,9 +349,11 @@ class QLearningTrainer:
                     target = reward
                 else:
                     target = reward + GAMMA * max(self.q_table[next_state_key])
-                
+
                 current_q = self.q_table[state_key][action_idx]
-                self.q_table[state_key][action_idx] = current_q + learning_rate * (target - current_q)
+                self.q_table[state_key][action_idx] = (current_q
+                                                       + learning_rate
+                                                       * (target - current_q))
 
                 state_key = next_state_key
 
@@ -379,13 +388,15 @@ class QLearningTrainer:
 
             if self.episode_logs:
                 print(f"Episode {episode + 1}/{num_episodes}, "
-                      f"Episode time: {time.time() - episode_start_time:.2f}s, "
+                      f"Episode time: "
+                      f"{time.time() - episode_start_time:.2f}s, "
                       f"Total Reward: {total_reward:.2f}, "
                       f"Epsilon: {self.epsilon:.4f}, "
                       f"Snake length: {len(board.snake)}, "
                       f"Map size: {current_board_size}, "
                       f"Ratio: {ratio * 100:.2f}%, "
-                      f"Q-table: {len(self.q_table):,} / {self.q_table_max_size:,} "
+                      f"Q-table: {len(self.q_table):,}"
+                      f" / {self.q_table_max_size:,} "
                       f"({current_q_table_ratio:.1%})")
 
         self.plot_training_metrics()
@@ -396,10 +407,11 @@ class QLearningTrainer:
         """
         Calculates episode indices for visual display during training.
 
-        This method determines which episodes should have visual rendering enabled
-        by combining decile milestones (10%, 20%, ..., 90%) with the final 10
-        episodes. This provides a good balance between monitoring training progress
-        and performance efficiency by avoiding excessive rendering.
+        This method determines which episodes should have visual rendering
+        enabled by combining decile milestones (10%, 20%, ..., 90%) with
+        the final 10 episodes. This provides a good balance between monitoring
+        training progress and performance efficiency by avoiding excessive
+        rendering.
 
         Args:
             num_episodes (int): Total number of training episodes to calculate
@@ -413,7 +425,8 @@ class QLearningTrainer:
             >>> trainer = QLearningTrainer()
             >>> episodes = trainer.get_display_episodes(100)
             >>> episodes
-            {10, 20, 30, 40, 50, 60, 70, 80, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99}
+            {10, 20, 30, 40, 50, 60, 70, 80, 90, 91, 92, 93, 94,
+            95, 96, 97, 98, 99}
         """
         deciles = {int(num_episodes * i / 10) for i in range(1, 10)}
         last_episodes = set(range(num_episodes - 10, num_episodes))
@@ -424,10 +437,10 @@ class QLearningTrainer:
         Generates episode-to-label mapping for model checkpoint saving.
 
         This method creates a dictionary that maps specific episode indices to
-        descriptive labels for saving model checkpoints at key training milestones.
-        Includes early episodes (1st, 10th, 100th), fractional milestones
-        (decile, mid-point), and the final episode for comprehensive evaluation
-        coverage.
+        descriptive labels for saving model checkpoints at key training
+        milestones. Includes early episodes (1st, 10th, 100th), fractional
+        milestones (decile, mid-point), and the final episode for comprehensive
+        evaluation coverage.
 
         Args:
             num_episodes (int): Total number of training episodes to determine
@@ -457,11 +470,11 @@ class QLearningTrainer:
         """
         Creates and saves a comprehensive training metrics visualization.
 
-        This method generates a multi-panel plot showing four key training metrics
-        over episodes: scores (with rolling max/min), steps per episode, snake
-        lengths, and length-to-board-size ratios. The visualization is saved as
-        a PNG file in the model folder path for analysis and monitoring of
-        training progress.
+        This method generates a multi-panel plot showing four key training
+        metrics over episodes: scores (with rolling max/min), steps per
+        episode, snake lengths, and length-to-board-size ratios. The
+        visualization is saved as a PNG file in the model folder path for
+        analysis and monitoring of training progress.
 
         Args:
             None
@@ -534,13 +547,15 @@ class QLearningTrainer:
 
     def evaluate(self, model_path, num_episodes=10):
         """
-        Evaluates the trained Q-learning agent's performance using a saved model.
+        Evaluates the trained Q-learning agent's performance using
+        a saved model.
 
-        This method loads a previously trained Q-table from disk and runs the agent
-        in evaluation mode (greedy policy with no exploration) for a specified
-        number of episodes. It collects performance metrics including scores,
-        snake lengths, steps taken, and board utilization ratios. The evaluation
-        can optionally display the game visually for each episode.
+        This method loads a previously trained Q-table from disk and
+        runs the agent in evaluation mode (greedy policy with no
+        exploration) for a specified number of episodes. It collects
+        performance metrics including scores, snake lengths, steps taken,
+        and board utilization ratios. The evaluation can optionally display
+        the game visually for each episode.
 
         Args:
             model_path (str): Path to the saved Q-table pickle file to load for
@@ -549,7 +564,8 @@ class QLearningTrainer:
                 Defaults to 10.
 
         Returns:
-            None: Prints evaluation results to console but doesn't return values.
+            None: Prints evaluation results to console but doesn't return
+                values.
 
         Example:
             >>> trainer = QLearningTrainer()
@@ -591,7 +607,7 @@ class QLearningTrainer:
                 else:
                     # If state not in Q-table, choose random action
                     action_idx = random.randint(0, 2)
-                
+
                 actions = ['FORWARD', 'LEFT', 'RIGHT']
                 action_str = actions[action_idx]
 
@@ -615,12 +631,13 @@ class QLearningTrainer:
             total_steps.append(steps)
             total_ratios.append(ratio)
 
-            print(f"[Evaluation] Episode {episode + 1}/{num_episodes} - "
-                    f"Score: {total_reward}, "
-                    f"Length: {len(board.snake)}, "
-                    f"Steps: {steps}, "
-                    f"Ratio: {ratio:.4f}, "
-                    f"Board Size: {current_board_size}")
+            print(f"[Evaluation] Episode {episode + 1}"
+                  f"/{num_episodes} - "
+                  f"Score: {total_reward}, "
+                  f"Length: {len(board.snake)}, "
+                  f"Steps: {steps}, "
+                  f"Ratio: {ratio:.4f}, "
+                  f"Board Size: {current_board_size}")
 
         print("\n--- Q-learning Evaluation Summary ---"
               f"Max Length: {np.max(total_lengths)}"
@@ -633,12 +650,13 @@ class QLearningTrainer:
         Converts a state representation to a hashable key for Q-table indexing.
 
         This method transforms the state vector (either numpy array or PyTorch
-        tensor) into a tuple that can be used as a dictionary key for the Q-table.
-        The conversion ensures the state can be efficiently stored and retrieved
-        from the Q-table data structure.
+        tensor) into a tuple that can be used as a dictionary key for the
+        Q-table. The conversion ensures the state can be efficiently stored
+        and retrieved from the Q-table data structure.
 
         Args:
-            state (torch.Tensor or numpy.ndarray): The state representation vector.
+            state (torch.Tensor or numpy.ndarray): The state representation
+            vector.
 
         Returns:
             tuple: A hashable tuple representation of the state.
@@ -653,7 +671,7 @@ class QLearningTrainer:
             return tuple(state.detach().numpy().flatten())
         else:
             return tuple(state.flatten())
-    
+
     def _save_q_table(self, path):
         """
         Saves the Q-table to a file using pickle serialization.
@@ -674,7 +692,7 @@ class QLearningTrainer:
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, 'wb') as f:
             pickle.dump(self.q_table, f)
-    
+
     def _load_q_table(self, path):
         """
         Loads a Q-table from a file using pickle deserialization.

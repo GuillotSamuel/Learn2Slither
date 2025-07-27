@@ -103,15 +103,16 @@ def main():
     parser.add_argument('--episode_logs',
                         action='store_true',
                         default=False,
-                        help='Activate episode logs when training or evaluating (default: False)')
+                        help='Activate episode logs (default: False)')
     parser.add_argument('--no_episode_logs',
                         action='store_true',
                         default=False,
-                        help='Deactivate episode logs when training or evaluating')
+                        help='Deactivate episode logs (default: False)')
 
     args = parser.parse_args()
 
-    # Handle episode_logs logic: default False, but can be enabled with --episode_logs
+    # Handle episode_logs logic: default False,
+    # but can be enabled with --episode_logs
     episode_logs_enabled = args.episode_logs
     if args.no_episode_logs:
         episode_logs_enabled = False
@@ -161,7 +162,8 @@ def main():
                     board_size=args.board_size)
 
     else:
-        print("Invalid mode. Use instead 'train', 'play', 'evaluate', 'manual'.")
+        print("Invalid mode. Use instead 'train', "
+              "'play', 'evaluate', 'manual'.")
 
 
 if __name__ == "__main__":

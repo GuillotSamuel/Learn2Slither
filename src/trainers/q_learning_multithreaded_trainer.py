@@ -25,18 +25,25 @@ class QLearningMultiThreadedTrainer:
                  model_folder_path=None,
                  episode_logs=True):
         """
-        Initializes a Multithreaded Q-Learning trainer for reinforcement learning.
+        Initializes a Multithreaded Q-Learning trainer for reinforcement
+        learning.
 
         Args:
-            display_training (bool): Whether to visually display the training process.
-            display_evaluation (bool): Whether to visually display the evaluation process.
-            board_size (int): Size of the game board. If 0, uses random sizes between 5-20.
-            display_speed (float): Speed factor controlling display update rate in seconds.
-            ultra_rewards (bool): Whether to enable enhanced reward scheme.
+            display_training (bool): Whether to visually display the
+            training process.
+            display_evaluation (bool): Whether to visually display the
+            evaluation process.
+            board_size (int): Size of the game board. If 0, uses random
+            sizes between 5-20.
+            display_speed (float): Speed factor controlling display update
+            rate in seconds.
+            ultra_rewards (bool): Whether to enable enhanced reward
+            scheme.
             render_mode (str): Rendering mode for visuals.
             num_episodes (int): Number of episodes for training.
             model_folder_path (str, optional): Custom path for saving models.
-            episode_logs (bool): Whether to display episode logs during training/evaluation.
+            episode_logs (bool): Whether to display episode logs during
+            training/evaluation.
         """
         self.display_training = display_training
         self.display_evaluation = display_evaluation
@@ -50,7 +57,7 @@ class QLearningMultiThreadedTrainer:
         self.render_mode = render_mode
         self.start_time = time.time()
         self.q_table_max_size = 0
-        self.model_folder_path = self._generate_model_folder_path(model_folder_path)
+        self.model_folder_path = self._gen_model_folder_path(model_folder_path)
         self.episode_logs = episode_logs
 
         self.scores = []
@@ -60,7 +67,7 @@ class QLearningMultiThreadedTrainer:
         self.moves = []
         self.snake_lengths = []
 
-    def _generate_model_folder_path(self, model_folder_path):
+    def _gen_model_folder_path(self, model_folder_path):
         """
         Generates a model folder path based on board size configuration.
 
@@ -85,7 +92,7 @@ class QLearningMultiThreadedTrainer:
             if self.board_size == 0:
                 size_suffix = "random_multithreaded"
             else:
-                size_suffix = f"eval_q_learning_multithreaded"
+                size_suffix = "eval_q_learning_multithreaded"
             return f"models_{size_suffix}"
         else:
             return model_folder_path
@@ -153,9 +160,9 @@ class QLearningMultiThreadedTrainer:
 
         This method computes the upper bound on the number of possible states
         based on the state representation dimensions. It considers ray-based
-        vision with four directions and four cell types, but applies a reduction
-        factor based on board size since not all theoretical states are reachable
-        in practice.
+        vision with four directions and four cell types, but applies a
+        reduction factor based on board size since not all theoretical states
+        are reachable in practice.
 
         Args:
             None
@@ -172,59 +179,61 @@ class QLearningMultiThreadedTrainer:
         max_distance = 10  # From encode_vision function in state.py
         rays_count = 4     # front, left, right, back
         cell_types = 4     # W, S, A, R
-        
+
         discrete_values_per_dimension = max_distance + 1
-        theoretical_max = discrete_values_per_dimension ** (rays_count * cell_types)
-        
+        theoretical_max = (discrete_values_per_dimension
+                           ** (rays_count * cell_types))
+
         max_board_distance = min(self.board_size - 1, max_distance)
         practical_values_per_dimension = max_board_distance + 1
-        
-        # Estimate based on board size - larger boards have more possible states
+
         if self.board_size == 0:  # Random board sizes
             avg_board_size = 12.5
             size_factor = avg_board_size / 10
         else:
             size_factor = self.board_size / 10
-        
+
         practical_max = int(
-            (practical_values_per_dimension ** (rays_count * cell_types)) 
-            * (size_factor ** 2)  # Quadratic scaling with board size
-            * 0.01  # Constraint factor (only ~1% of theoretical states are reachable)
+            (practical_values_per_dimension ** (rays_count * cell_types))
+            * (size_factor ** 2)
+            * 0.01
         )
-        
+
         # Set bounds to reasonable values
-        min_size = 1000    # Minimum reasonable size
-        max_size = 1000000 # Maximum to prevent memory issues
-        
+        min_size = 1000  # Minimum reasonable size
+        max_size = 1000000  # Maximum to prevent memory issues
+
         estimated_size = max(min_size, min(practical_max, max_size))
         self.q_table_max_size = estimated_size
-        
+
         print(
             f"Q-table size estimation:\n"
             f"  Board size: {self.board_size}\n"
             f"  Theoretical max states: {theoretical_max:,}\n"
             f"  Practical max distance: {max_board_distance}\n"
             f"  Estimated reachable states: {estimated_size:,}\n"
-            f"  Memory estimate: ~{estimated_size * 3 * 8 / 1024 / 1024:.1f} MB"
+            f"  Memory estimate: ~"
+            f"{estimated_size * 3 * 8 / 1024 / 1024:.1f} MB"
         )
 
     def train(self, num_episodes):
         """
         Trains the agent using multithreaded Q-learning with local Q-tables.
 
-        This method implements a parallelized version of the Q-learning algorithm
-        where multiple worker threads train on separate episodes with local
-        Q-tables. The threads periodically synchronize with a central Q-table
-        to share learned knowledge. This approach significantly speeds up training
-        on multi-core systems while maintaining learning quality.
+        This method implements a parallelized version of the Q-learning
+        algorithm where multiple worker threads train on separate episodes
+        with local Q-tables. The threads periodically synchronize with a
+        central Q-table to share learned knowledge. This approach
+        significantly speeds up training on multi-core systems while
+        maintaining learning quality.
 
         Args:
             num_episodes (int): Total number of training episodes to distribute
                 across worker threads.
 
         Returns:
-            None: Updates internal Q-table and saves training metrics, but doesn't
-                return values.
+            None: Updates internal Q-table and saves training metrics, but
+            doesn't return values.
 
         Example:
             >>> trainer = QLearningMultiThreadedTrainer(board_size=10)
@@ -234,23 +243,26 @@ class QLearningMultiThreadedTrainer:
         """
         # Define Q-table size based on board size and state representation
         self.define_q_table_max_size()
-        
+
         # Number of threads to use - optimize for available CPU cores
         num_threads = self.calculate_optimal_threads()
-        print(f"Using {num_threads} threads for multithreaded Q-learning (high CPU utilization mode)")
-        
+        print(f"Using {num_threads} threads for multithreaded "
+              f"Q-learning (high CPU utilization mode)")
+
         # Calculate optimal sync frequency based on training size
-        sync_frequency = self.calculate_sync_frequency(num_episodes, num_threads)
-        print(f"Sync frequency set to every {sync_frequency} episodes for minimal lock contention")
-        
+        sync_frequency = self.calculate_sync_frequency(num_episodes,
+                                                       num_threads)
+        print(f"Sync frequency set to every {sync_frequency} "
+              f"episodes for minimal lock contention")
+
         # Ultra-optimized locks for maximum performance
         self.central_q_table = self.make_q_table()
         self.central_lock = threading.Lock()  # Use fastest lock type
-        
-        # Central episode counter shared by all threads - use atomic-like operations
+
+        # Central episode counter shared by all threads
         self.central_episode_counter = num_episodes
         self.episode_counter_lock = threading.Lock()
-        
+
         # Metrics tracking with minimal locking
         self.thread_metrics = {
             'scores': [],
@@ -259,12 +271,12 @@ class QLearningMultiThreadedTrainer:
             'ratios': []
         }
         self.metrics_lock = threading.Lock()
-        
+
         if self.episode_logs:
-            print(f"Starting multithreaded Q-learning with {num_threads} threads")
+            print(f"Starting Q-learning with {num_threads} threads")
             print(f"Total episodes in central pool: {num_episodes}")
             print(f"Sync frequency: every {sync_frequency} local episodes")
-        
+
         # Launch threads
         threads = []
         for thread_id in range(num_threads):
@@ -275,26 +287,28 @@ class QLearningMultiThreadedTrainer:
             )
             threads.append(thread)
             thread.start()
-        
+
         # Wait for all threads to complete
         for thread in threads:
             thread.join()
-        
+
         # Final metrics compilation
         self._compile_final_metrics()
-        
+
         # Save final model
         final_path = os.path.join(self.model_folder_path, "end_model.pkl")
         self._save_q_table(final_path)
-        
+
         # Plot training metrics
         self.plot_training_metrics()
-        
+
         if self.episode_logs:
-            print(f"\nMultithreaded Q-learning completed!")
+            print("\nMultithreaded Q-learning completed!")
             print(f"Total training time: {time.time() - self.start_time:.2f}s")
-            print(f"Total unique states learned: {len(self.central_q_table):,}")
-            print(f"Central Q-table memory usage: ~{len(self.central_q_table) * 3 * 8 / 1024 / 1024:.1f} MB")
+            print(f"Total unique states learned: "
+                  f"{len(self.central_q_table):,}")
+            print(f"Central Q-table memory usage: "
+                  f"~{len(self.central_q_table) * 3 * 8 / 1024 / 1024:.1f} MB")
 
     def make_q_table(self):
         """
@@ -317,10 +331,11 @@ class QLearningMultiThreadedTrainer:
             [0.0, 0.0, 0.0]
         """
         return defaultdict(lambda: [0.0, 0.0, 0.0])
-    
+
     def merge_q_tables(self, central_table, local_table, weight=0.1):
         """
-        Merges a local Q-table into the central Q-table using weighted averaging.
+        Merges a local Q-table into the central Q-table using weighted
+        averaging.
 
         This method performs asynchronous Q-table updates by merging learned
         Q-values from worker threads into the central Q-table. It uses weighted
@@ -328,7 +343,8 @@ class QLearningMultiThreadedTrainer:
         accumulated learning from other threads.
 
         Args:
-            central_table (defaultdict): The main Q-table shared across threads.
+            central_table (defaultdict): The main Q-table shared across
+            threads.
             local_table (defaultdict): A thread's local Q-table to merge.
             weight (float): The weight for new values (default 0.1 = 10% new,
                 90% old).
@@ -345,18 +361,19 @@ class QLearningMultiThreadedTrainer:
             for action_idx in range(3):
                 # Weighted average: 90% old, 10% new
                 central_q_values[action_idx] = (
-                    (1 - weight) * central_q_values[action_idx] + 
+                    (1 - weight) * central_q_values[action_idx] +
                     weight * local_q_values[action_idx]
                 )
-    
+
     def q_learning_thread(self, thread_id, sync_every=100):
         """
         Q-learning training function executed by individual worker threads.
 
-        This method implements the core training loop for a single worker thread
-        in the multithreaded Q-learning system. Each thread maintains a local
-        Q-table, processes batches of episodes, and periodically synchronizes
-        with the central Q-table to share learned knowledge with other threads.
+        This method implements the core training loop for a single worker
+        thread in the multithreaded Q-learning system. Each thread maintains
+        a local Q-table, processes batches of episodes, and periodically
+        synchronizes with the central Q-table to share learned knowledge with
+        other threads.
 
         Args:
             thread_id (int): Unique identifier for this worker thread.
@@ -376,130 +393,151 @@ class QLearningMultiThreadedTrainer:
         local_q_table = self.make_q_table()
         learning_rate = 0.1
         local_epsilon = self.epsilon
-        
+
         # Local metrics
         local_scores = []
         local_lengths = []
         local_moves = []
         local_ratios = []
-        
+
         # Local episode counter for sync frequency
         local_episode_count = 0
-        
-        print(f"Thread {thread_id}: Starting training from central episode pool")
-        
+
+        print(f"Thread {thread_id}"
+              f": Starting training from central episode pool")
+
         while True:
             # Get very large batches to minimize lock contention completely
             episodes_batch = []
             with self.episode_counter_lock:
                 # Get huge batch of episodes to minimize lock contention
-                batch_size = min(100, self.central_episode_counter)  # Process up to 100 episodes before next lock
+                batch_size = min(100, self.central_episode_counter)
                 for _ in range(batch_size):
                     if self.central_episode_counter <= 0:
                         break
                     self.central_episode_counter -= 1
                     episodes_batch.append(self.central_episode_counter)
-                
+
                 if not episodes_batch:
                     break  # No more episodes to process
-                
+
                 episodes_remaining = self.central_episode_counter
-            
+
             # Process batch of episodes without locks
             for current_global_episode in episodes_batch:
                 local_episode_count += 1
-                
+
                 # Determine board size
                 if self.board_size == 0:
                     current_board_size = random.randint(5, 20)
                 else:
                     current_board_size = self.board_size
-                
+
                 # Initialize game
                 board = Board(board_size=current_board_size,
-                             ultra_rewards=self.ultra_rewards,
-                             render_mode=self.render_mode,
-                             episodes_logs=self.episode_logs)
-                state = get_state(board.board, board.snake, board.direction)
+                              ultra_rewards=self.ultra_rewards,
+                              render_mode=self.render_mode,
+                              episodes_logs=self.episode_logs)
+                state = get_state(board.board,
+                                  board.snake,
+                                  board.direction)
                 state_key = self._state_to_key(state)
                 done = False
                 total_reward = 0
                 steps = 0
-                
+
                 # Update local epsilon based on progress
-                total_episodes_initial = local_episode_count + episodes_remaining
+                total_episodes_initial = (local_episode_count
+                                          + episodes_remaining)
                 progress = local_episode_count / max(total_episodes_initial, 1)
-                local_epsilon = self._update_local_epsilon_by_progress(progress)
-                
+                local_epsilon = self._update_local_epsilon(progress)
+
                 # Episode loop
                 while not done:
-                    # Initialize Q-values for new state if not seen before (no lock needed)
+                    # Initialize Q-values for new state if not seen before
                     if state_key not in local_q_table:
                         local_q_table[state_key] = [0.0, 0.0, 0.0]
-                    
+
                     # Select action using epsilon-greedy policy
                     if random.random() < local_epsilon:
                         action_idx = random.randint(0, 2)
                     else:
                         action_idx = np.argmax(local_q_table[state_key])
-                    
+
                     actions = ['FORWARD', 'LEFT', 'RIGHT']
                     action_str = actions[action_idx]
-                    
+
                     # Take action
                     next_state_raw, reward, done = board.step(action_str)
-                    next_state = get_state(board.board, board.snake, board.direction)
+                    next_state = get_state(board.board,
+                                           board.snake,
+                                           board.direction)
                     next_state_key = self._state_to_key(next_state)
                     total_reward += reward
                     steps += 1
-                    
-                    # Initialize Q-values for next state if not seen before (no lock needed)
+
+                    # Initialize Q-values for next state if not seen before
                     if next_state_key not in local_q_table:
                         local_q_table[next_state_key] = [0.0, 0.0, 0.0]
-                    
+
                     # Q-learning update rule
                     if done:
                         target = reward
                     else:
-                        target = reward + GAMMA * max(local_q_table[next_state_key])
-                    
+                        target = (reward + GAMMA
+                                  * max(local_q_table[next_state_key]))
+
                     current_q = local_q_table[state_key][action_idx]
-                    local_q_table[state_key][action_idx] = current_q + learning_rate * (target - current_q)
-                    
+                    local_q_table[state_key][action_idx] = (current_q
+                                                            + learning_rate
+                                                            * (target
+                                                               - current_q))
+
                     state_key = next_state_key
-                
+
                 # Store episode metrics
                 ratio = len(board.snake) / (current_board_size ** 2)
                 local_scores.append(total_reward)
                 local_lengths.append(len(board.snake))
                 local_moves.append(steps)
                 local_ratios.append(ratio)
-                
-                # Display episode logs if enabled - extremely rare to reduce I/O blocking  
-                if self.episode_logs and local_episode_count % 1000 == 0:  # Only print every 1000 episodes
-                    print(f"[Thread {thread_id}] Episode {local_episode_count}, "
-                          f"Q-table: {len(local_q_table):,}, "
-                          f"Remaining: {episodes_remaining}")
-                
+
+                # Display episode logs if enabled
+                if (
+                    self.episode_logs
+                    and local_episode_count % 1000 == 0
+                ):
+                    print(
+                        f"[Thread {thread_id}]"
+                        f" Episode {local_episode_count}, "
+                        f"Q-table: {len(local_q_table):,}, "
+                        f"Remaining: {episodes_remaining}"
+                    )
+
                 # Extremely rare synchronization with central Q-table
                 if local_episode_count % sync_every == 0:
                     # Absolute minimal lock time for merge
                     with self.central_lock:
                         # Very light merge with minimal weight
-                        self.merge_q_tables(self.central_q_table, local_q_table, weight=0.01)
-                    
+                        self.merge_q_tables(self.central_q_table,
+                                            local_q_table,
+                                            weight=0.01)
+
                     # Almost never print sync info to avoid I/O blocking
                     if local_episode_count % (sync_every * 50) == 0:
-                        print(f"Thread {thread_id}: Sync at episode {local_episode_count}")
-        
+                        print(f"Thread {thread_id}"
+                              f": Sync at episode {local_episode_count}")
+
         # Final synchronization - ultra minimal, no I/O blocking
         with self.central_lock:
             # Ultra light final merge
-            self.merge_q_tables(self.central_q_table, local_q_table, weight=0.5)
-        
-        # Minimal final message  
+            self.merge_q_tables(self.central_q_table,
+                                local_q_table,
+                                weight=0.5)
+
+        # Minimal final message
         print(f"Thread {thread_id}: Completed {local_episode_count} episodes")
-        
+
         # Store final metrics in batch to reduce lock contention
         if local_scores:  # Only lock if we have data to store
             with self.metrics_lock:
@@ -507,11 +545,12 @@ class QLearningMultiThreadedTrainer:
                 self.thread_metrics['lengths'].extend(local_lengths)
                 self.thread_metrics['moves'].extend(local_moves)
                 self.thread_metrics['ratios'].extend(local_ratios)
-        
-        print(f"Thread {thread_id}: Completed training. Processed {local_episode_count} episodes. "
+
+        print(f"Thread {thread_id}: Completed training. "
+              f"Processed {local_episode_count} episodes. "
               f"Local Q-table size: {len(local_q_table):,}")
 
-    def _update_local_epsilon_by_progress(self, progress):
+    def _update_local_epsilon(self, progress):
         """
         Updates the epsilon value based on training progress for local threads.
 
@@ -533,14 +572,18 @@ class QLearningMultiThreadedTrainer:
         """
         # Use similar decay strategy as the main training
         decay_phase = 0.80  # first 80% of training
-        
+
         if progress < decay_phase:
             decay = np.exp(-self.k * progress / decay_phase)
-            return self.epsilon_min + (self.epsilon_max - self.epsilon_min) * decay
+            return (self.epsilon_min
+                    + (self.epsilon_max - self.epsilon_min)
+                    * decay)
         else:
             final_progress = (progress - decay_phase) / (1.0 - decay_phase)
             final_target = 0.0001
-            return self.epsilon_min - (self.epsilon_min - final_target) * final_progress
+            return (self.epsilon_min
+                    - (self.epsilon_min - final_target)
+                    * final_progress)
 
     def _compile_final_metrics(self):
         """
@@ -566,23 +609,23 @@ class QLearningMultiThreadedTrainer:
         all_lengths = self.thread_metrics['lengths']
         all_moves = self.thread_metrics['moves']
         all_ratios = self.thread_metrics['ratios']
-        
+
         # Store in main trainer
         self.scores = all_scores
         self.snake_lengths = all_lengths
         self.moves = all_moves
         self.length_ratios = all_ratios
-        
+
         # Calculate rolling statistics
         self.max_scores = []
         self.min_scores = []
-        
+
         for i in range(len(self.scores)):
             window_start = max(0, i - 99)
             window_scores = self.scores[window_start:i + 1]
             self.max_scores.append(max(window_scores))
             self.min_scores.append(min(window_scores))
-        
+
         # Copy central Q-table to main Q-table for compatibility
         self.q_table = dict(self.central_q_table)
 
@@ -590,11 +633,11 @@ class QLearningMultiThreadedTrainer:
         """
         Creates and saves a comprehensive training metrics visualization.
 
-        This method generates a multi-panel plot showing four key training metrics
-        over episodes: scores (with rolling max/min), steps per episode, snake
-        lengths, and length-to-board-size ratios. The visualization is saved as
-        a PNG file in the model folder path for analysis and monitoring of
-        multithreaded training progress.
+        This method generates a multi-panel plot showing four key training
+        metrics over episodes: scores (with rolling max/min), steps per
+        episode, snake lengths, and length-to-board-size ratios. The
+        visualization is saved as a PNG file in the model folder path for
+        analysis and monitoring of multithreaded training progress.
 
         Args:
             None
@@ -682,7 +725,8 @@ class QLearningMultiThreadedTrainer:
                 Defaults to 10.
 
         Returns:
-            None: Prints evaluation results to console but doesn't return values.
+            None: Prints evaluation results to console but doesn't return
+            values.
 
         Example:
             >>> trainer = QLearningMultiThreadedTrainer()
@@ -724,7 +768,7 @@ class QLearningMultiThreadedTrainer:
                 else:
                     # If state not in Q-table, choose random action
                     action_idx = random.randint(0, 2)
-                
+
                 actions = ['FORWARD', 'LEFT', 'RIGHT']
                 action_str = actions[action_idx]
 
@@ -748,12 +792,13 @@ class QLearningMultiThreadedTrainer:
             total_steps.append(steps)
             total_ratios.append(ratio)
 
-            print(f"[Evaluation] Episode {episode + 1}/{num_episodes} - "
-                    f"Score: {total_reward}, "
-                    f"Length: {len(board.snake)}, "
-                    f"Steps: {steps}, "
-                    f"Ratio: {ratio:.4f}, "
-                    f"Board Size: {current_board_size}")
+            print(f"[Evaluation] Episode {episode + 1}"
+                  f"/{num_episodes} - "
+                  f"Score: {total_reward}, "
+                  f"Length: {len(board.snake)}, "
+                  f"Steps: {steps}, "
+                  f"Ratio: {ratio:.4f}, "
+                  f"Board Size: {current_board_size}")
 
         print("\n--- Multithreaded Q-learning Evaluation Summary ---"
               f"Max Length: {np.max(total_lengths)}"
@@ -766,12 +811,14 @@ class QLearningMultiThreadedTrainer:
         Converts a state representation to a hashable key for Q-table indexing.
 
         This method transforms the state vector (either numpy array or PyTorch
-        tensor) into a tuple that can be used as a dictionary key for the Q-table.
-        The conversion ensures the state can be efficiently stored and retrieved
-        from the Q-table data structure in multithreaded environments.
+        tensor) into a tuple that can be used as a dictionary key for the
+        Q-table. The conversion ensures the state can be efficiently stored
+        and retrieved from the Q-table data structure in multithreaded
+        environments.
 
         Args:
-            state (torch.Tensor or numpy.ndarray): The state representation vector.
+            state (torch.Tensor or numpy.ndarray): The state representation
+            vector.
 
         Returns:
             tuple: A hashable tuple representation of the state.
@@ -787,7 +834,7 @@ class QLearningMultiThreadedTrainer:
             return tuple(state.detach().numpy().flatten())
         else:
             return tuple(state.flatten())
-    
+
     def _save_q_table(self, path):
         """
         Saves the Q-table to a file using pickle serialization.
@@ -809,7 +856,7 @@ class QLearningMultiThreadedTrainer:
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, 'wb') as f:
             pickle.dump(self.q_table, f)
-    
+
     def _load_q_table(self, path):
         """
         Loads a Q-table from a file using pickle deserialization.
@@ -856,44 +903,57 @@ class QLearningMultiThreadedTrainer:
                 try:
                     with open('/proc/cpuinfo', 'r') as f:
                         cpuinfo = f.read()
-                    
+
                     # Count unique physical IDs
                     physical_ids = set()
-                    core_ids_per_physical = {}
-                    
+                    core_ids_per_phys = {}
+
                     for line in cpuinfo.split('\n'):
                         if line.startswith('physical id'):
                             phys_id = line.split(':')[1].strip()
                             physical_ids.add(phys_id)
-                            if phys_id not in core_ids_per_physical:
-                                core_ids_per_physical[phys_id] = set()
+                            if phys_id not in core_ids_per_phys:
+                                core_ids_per_phys[phys_id] = set()
                         elif line.startswith('core id'):
                             core_id = line.split(':')[1].strip()
                             # Associate with the last seen physical_id
                             if physical_ids:
                                 last_phys_id = list(physical_ids)[-1]
-                                core_ids_per_physical[last_phys_id].add(core_id)
-                    
-                    if physical_ids and core_ids_per_physical:
+                                core_ids_per_phys[last_phys_id].add(core_id)
+
+                    if physical_ids and core_ids_per_phys:
                         # Calculate total physical cores across all sockets
-                        total_physical_cores = sum(len(cores) for cores in core_ids_per_physical.values())
+                        total_physical_cores = sum(
+                            len(cores)
+                            for cores in core_ids_per_phys.values()
+                        )
                         if total_physical_cores > 0:
                             return total_physical_cores
-                    
+
                 except (IOError, ValueError, IndexError):
                     pass
-            
+
             # Method 2: macOS - use sysctl
-            if os.name == 'posix' and hasattr(os, 'uname') and os.uname().sysname == 'Darwin':
+            if (
+                os.name == 'posix'
+                and hasattr(os, 'uname')
+                and os.uname().sysname == 'Darwin'
+            ):
                 try:
                     import subprocess
-                    result = subprocess.run(['sysctl', '-n', 'hw.physicalcpu'], 
-                                          capture_output=True, text=True, timeout=5)
+                    result = subprocess.run(['sysctl',
+                                             '-n',
+                                             'hw.physicalcpu'],
+                                            capture_output=True,
+                                            text=True,
+                                            timeout=5)
                     if result.returncode == 0:
                         return int(result.stdout.strip())
-                except (subprocess.SubprocessError, ValueError, FileNotFoundError):
+                except (subprocess.SubprocessError,
+                        ValueError,
+                        FileNotFoundError):
                     pass
-            
+
             # Method 3: Windows - use WMI if available
             if os.name == 'nt':
                 try:
@@ -901,7 +961,7 @@ class QLearningMultiThreadedTrainer:
                     result = subprocess.run([
                         'wmic', 'cpu', 'get', 'NumberOfCores', '/value'
                     ], capture_output=True, text=True, timeout=10)
-                    
+
                     if result.returncode == 0:
                         total_cores = 0
                         for line in result.stdout.split('\n'):
@@ -910,15 +970,17 @@ class QLearningMultiThreadedTrainer:
                                 total_cores += cores
                         if total_cores > 0:
                             return total_cores
-                except (subprocess.SubprocessError, ValueError, FileNotFoundError):
+                except (subprocess.SubprocessError,
+                        ValueError,
+                        FileNotFoundError):
                     pass
-            
+
         except Exception:
             pass
-        
+
         # Fallback: use logical core count
         return os.cpu_count() or 4
-    
+
     def calculate_optimal_threads(self):
         """
         Calculates the optimal number of threads for multithreaded Q-learning.
@@ -940,50 +1002,55 @@ class QLearningMultiThreadedTrainer:
         """
         physical_cores = self._get_physical_cores()
         logical_cores = os.cpu_count() or 4
-        
+
         print(f"Physical cores detected: {physical_cores}")
         print(f"Logical cores (os.cpu_count()): {logical_cores}")
-        
+
         if physical_cores < logical_cores * 0.6:
-            print(f"Physical core detection seems inaccurate (ratio: {physical_cores/logical_cores:.2f})")
+            print(f"Physical core detection seems inaccurate (ratio:"
+                  f" {physical_cores/logical_cores:.2f})")
             print(f"Using logical cores as fallback: {logical_cores}")
             effective_cores = logical_cores
         elif logical_cores > physical_cores * 1.3:
             # Hyperthreading detected
-            print(f"Hyperthreading detected (logical/physical ratio: {logical_cores/physical_cores:.2f})")
-            print(f"Using logical cores to maximize thread utilization: {logical_cores}")
+            print(f"Hyperthreading detected (logical/physical ratio:"
+                  f" {logical_cores/physical_cores:.2f})")
+            print(f"Using logical cores to maximize thread utilization:"
+                  f" {logical_cores}")
             effective_cores = logical_cores
         else:
             effective_cores = physical_cores
-        
-        # Maximum aggressive approach: use ALL available cores for pure CPU work
+
+        # Maximum aggressive approach
         if effective_cores >= 16:
             optimal_threads = effective_cores
         elif effective_cores >= 8:
             optimal_threads = int(effective_cores * 0.98)
         else:
             optimal_threads = max(2, int(effective_cores * 0.95))
-        
+
         # Set very high upper bound to use all available resources
-        optimal_threads = min(optimal_threads, 128)  # Allow up to 128 threads
-        
+        optimal_threads = min(optimal_threads, 128)
+
         # Minor adjustments based on board size and memory
         if self.board_size == 0:  # Random board sizes
             optimal_threads = max(2, int(optimal_threads * 0.9))
         elif self.board_size > 20:
             optimal_threads = max(2, int(optimal_threads * 0.85))
-        
-        print(f"Optimal threads calculated: {optimal_threads} (from {effective_cores} effective cores)")
+
+        print(f"Optimal threads calculated: {optimal_threads}"
+              f" (from {effective_cores} effective cores)")
         return optimal_threads
-    
+
     def calculate_sync_frequency(self, num_episodes, num_threads):
         """
-        Calculates the optimal synchronization frequency for multithreaded learning.
+        Calculates the optimal synchronization frequency for multithreaded
+        learning.
 
-        This method determines how often worker threads should synchronize their
-        local Q-tables with the central Q-table. The frequency is optimized based
-        on the total number of episodes and number of threads to balance learning
-        efficiency with computational overhead.
+        This method determines how often worker threads should synchronize
+        their local Q-tables with the central Q-table. The frequency is
+        optimized based on the total number of episodes and number of threads
+        to balance learning efficiency with computational overhead.
 
         Args:
             num_episodes (int): Total number of training episodes.
@@ -997,11 +1064,11 @@ class QLearningMultiThreadedTrainer:
             1000  # Sync every 1000 episodes
         """
         avg_episodes_per_thread = num_episodes // num_threads
-        
-        # Base frequency depends on training size - absolute minimum syncing for maximum CPU
+
+        # Base frequency depends on training size
         if num_episodes <= 500:              # Very small training
             base_frequency = 200
-        elif num_episodes <= 5000:           # Small training  
+        elif num_episodes <= 5000:           # Small training
             base_frequency = 1000
         elif num_episodes <= 50000:          # Medium training
             base_frequency = 10000
@@ -1011,17 +1078,17 @@ class QLearningMultiThreadedTrainer:
             base_frequency = 50000
         else:                                # Massive training
             base_frequency = 100000
-        
+
         # Adjust based on thread count
         if num_threads >= 8:
-            base_frequency = int(base_frequency * 1.2)  # More threads = less frequent sync
+            base_frequency = int(base_frequency * 1.2)
         elif num_threads <= 2:
-            base_frequency = int(base_frequency * 0.7)  # Fewer threads = more frequent sync
-        
+            base_frequency = int(base_frequency * 0.7)
+
         # Ensure reasonable bounds
-        min_frequency = 500                                   
-        max_frequency = max(avg_episodes_per_thread // 2, 50) 
-        
+        min_frequency = 500
+        max_frequency = max(avg_episodes_per_thread // 2, 50)
+
         sync_frequency = max(min_frequency, min(base_frequency, max_frequency))
-        
+
         return sync_frequency
