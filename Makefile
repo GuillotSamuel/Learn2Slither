@@ -24,22 +24,15 @@ PIP ?= $(shell if [ -d venv ]; then echo "venv/bin/pip"; else echo "pip3"; fi)
 MODEL_FOLDER=models
 MODEL_Q_LEARNING_FOLDER=$(MODEL_FOLDER)/models_eval_q_learning
 MODEL_Q_LEARNING_RANDOM_MAP_FOLDER=$(MODEL_FOLDER)/models_random_map_q_learning
-MODEL_Q_LEARNING_FOLDER_MULTITHREADED=$(MODEL_FOLDER)/models_eval_q_learning_multithreaded
 MODEL_Q_LEARNING_RANDOM_MAP_FOLDER_MULTITHREADED=$(MODEL_FOLDER)/models_random_map_q_learning_multithreaded
 MODEL_DEEP_LEARNING_FOLDER=$(MODEL_FOLDER)/models_eval_deep_q
 MODEL_DEEP_LEARNING_RANDOM_MAP_FOLDER=$(MODEL_FOLDER)/models_random_map_deep_q
-MODEL_DEEP_LEARNING_FULL_MAP_FOLDER=$(MODEL_FOLDER)/models_eval_deep_q_full_map
-MODEL_DEEP_LEARNING_FULL_MAP_RANDOM_MAP_FOLDER=$(MODEL_FOLDER)/models_random_map_deep_q_full_map
 
 # Model file paths for different training configurations
 MODEL_Q_LEARNING=$(MODEL_Q_LEARNING_FOLDER)/end_model.pkl              		# Standard Q-Learning model
 MODEL_Q_LEARNING_RANDOM_MAP=$(MODEL_Q_LEARNING_RANDOM_MAP_FOLDER)/end_model.pkl  # Q-Learning with random maps
-MODEL_Q_LEARNING_MULTITHREADED=$(MODEL_Q_LEARNING_FOLDER_MULTITHREADED)/end_model.pkl              		# Standard Q-Learning model multithreaded
-MODEL_Q_LEARNING_RANDOM_MAP_MULTITHREADED=$(MODEL_Q_LEARNING_RANDOM_MAP_FOLDER_MULTITHREADED)/end_model.pkl  # Q-Learning with random maps multithreaded
 MODEL_DEEP_LEARNING=$(MODEL_DEEP_LEARNING_FOLDER)/end_model.pkl               		# Deep Q-Learning model
 MODEL_DEEP_LEARNING_RANDOM_MAP=$(MODEL_DEEP_LEARNING_RANDOM_MAP_FOLDER)/end_model.pkl   # Deep Q-Learning with random maps
-MODEL_DEEP_LEARNING_FULL_MAP=$(MODEL_DEEP_LEARNING_FULL_MAP_FOLDER)/end_model.pkl       # Deep Q-Learning with full map representation
-MODEL_DEEP_LEARNING_FULL_MAP_RANDOM_MAP=$(MODEL_DEEP_LEARNING_FULL_MAP_RANDOM_MAP_FOLDER)/end_model.pkl # Deep Q-Learning full map with random maps
 
 # Game configuration parameters
 BOARD_SIZE ?= 10        # Default board size (10x10 grid)
@@ -111,27 +104,11 @@ train_random_map:
 	@echo "Starting Q-Learning training on random maps ($(EPISODES_TRAIN) episodes)..."
 	$(PYTHON) $(MAIN) --mode train --episodes $(EPISODES_TRAIN) --board_size 0 --ultra_rewards --training_method q_learning --model_folder_path $(MODEL_Q_LEARNING_RANDOM_MAP_FOLDER) --episode_logs
 
-# Train Q-Learning agent on fixed-size board with enhanced rewards with multithreading (high CPU utilization)
-train_multithreaded:
-	@echo "Starting multithreaded Q-Learning training ($(EPISODES_TRAIN) episodes)..."
-	$(PYTHON) $(MAIN) --mode train --episodes $(EPISODES_TRAIN) --board_size $(BOARD_SIZE) --ultra_rewards --training_method q_learning_multithreaded --model_folder_path $(MODEL_Q_LEARNING_FOLDER_MULTITHREADED) --episode_logs
-
-# Train Q-Learning agent with maximum CPU utilization (fewer logs, more threads)
-train_multithreaded_performance:
-	@echo "Starting high-performance multithreaded Q-Learning training ($(EPISODES_TRAIN) episodes)..."
-	@echo "This mode maximizes CPU utilization with minimal synchronization overhead"
-	$(PYTHON) $(MAIN) --mode train --episodes $(EPISODES_TRAIN) --board_size $(BOARD_SIZE) --ultra_rewards --training_method q_learning_multithreaded --model_folder_path $(MODEL_Q_LEARNING_FOLDER_MULTITHREADED) --no_episode_logs
-
 # Quick CPU performance test with optimized settings
 test_cpu_performance:
 	@echo "Quick CPU performance test (5000 episodes, optimized for maximum CPU usage)..."
 	@echo "Monitor CPU usage with: htop, top, or watch 'ps -eLf | grep python | wc -l'"
 	$(PYTHON) $(MAIN) --mode train --episodes 5000 --board_size 8 --ultra_rewards --training_method q_learning_multithreaded --model_folder_path $(MODEL_Q_LEARNING_FOLDER_MULTITHREADED) --no_episode_logs
-
-# Train Q-Learning agent on random board sizes (5-20) for better generalization with multithreading
-train_random_map_multithreaded:
-	@echo "Starting multithreaded Q-Learning training on random maps ($(EPISODES_TRAIN) episodes)..."
-	$(PYTHON) $(MAIN) --mode train --episodes $(EPISODES_TRAIN) --board_size 0 --ultra_rewards --training_method q_learning_multithreaded --model_folder_path $(MODEL_Q_LEARNING_RANDOM_MAP_FOLDER_MULTITHREADED) --episode_logs
 
 # Train Deep Q-Learning agent on fixed-size board using neural network
 train_deep_q_learning:
@@ -143,20 +120,8 @@ train_deep_q_learning_random_map:
 	@echo "Starting Deep Q-Learning training on random maps (10000 episodes)..."
 	$(PYTHON) $(MAIN) --mode train --episodes 10000 --board_size 0 --ultra_rewards --training_method deep_q_learning --model_folder_path $(MODEL_DEEP_LEARNING_RANDOM_MAP_FOLDER) --episode_logs
 
-# Train Deep Q-Learning agent with full map representation on fixed-size board
-train_deep_q_learning_full_map:
-	@echo "Starting Deep Q-Learning Full Map training (10000 episodes)..."
-	@echo "Using complete board state representation instead of vision rays..."
-	$(PYTHON) $(MAIN) --mode train --episodes 10000 --board_size $(BOARD_SIZE) --ultra_rewards --training_method deep_q_learning_full_map --model_folder_path $(MODEL_DEEP_LEARNING_FULL_MAP_FOLDER) --episode_logs
-
-# Train Deep Q-Learning agent with full map representation on random board sizes
-train_deep_q_learning_full_map_random_map:
-	@echo "Starting Deep Q-Learning Full Map training on random maps (10000 episodes)..."
-	@echo "Using complete board state representation with adaptive board sizes..."
-	$(PYTHON) $(MAIN) --mode train --episodes 10000 --board_size 0 --ultra_rewards --training_method deep_q_learning_full_map --model_folder_path $(MODEL_DEEP_LEARNING_FULL_MAP_RANDOM_MAP_FOLDER) --episode_logs
-
 # Train all models sequentially
-train_all: train train_multithreaded train_deep_q_learning train_deep_q_learning_full_map
+train_all: train train_deep_q_learning 
 	@echo "All training completed!"
 
 # ============================================================================#
@@ -167,7 +132,6 @@ train_all: train train_multithreaded train_deep_q_learning train_deep_q_learning
 evaluate_all: check
 	@echo "Evaluating all models ($(EPISODES_EVAL) episodes each)..."
 	$(PYTHON) $(MAIN) --mode evaluate --episodes $(EPISODES_EVAL) --model $(MODEL_Q_LEARNING) --board_size $(BOARD_SIZE) --training_method q_learning --model_folder_path $(MODEL_Q_LEARNING_FOLDER) --no_episode_logs
-	$(PYTHON) $(MAIN) --mode evaluate --episodes $(EPISODES_EVAL) --model $(MODEL_Q_LEARNING_MULTITHREADED) --board_size $(BOARD_SIZE) --training_method q_learning_multithreaded --model_folder_path $(MODEL_Q_LEARNING_FOLDER_MULTITHREADED) --no_episode_logs
 	$(PYTHON) $(MAIN) --mode evaluate --episodes $(EPISODES_EVAL) --model $(MODEL_DEEP_LEARNING) --board_size $(BOARD_SIZE) --training_method deep_q_learning --model_folder_path $(MODEL_DEEP_LEARNING_FOLDER) --no_episode_logs
 
 # Evaluate Q-Learning agent performance on fixed-size board (1000 episodes)
@@ -180,16 +144,6 @@ evaluate_random_map: check
 	@echo "Evaluating Q-Learning agent on random maps ($(EPISODES_EVAL) episodes)..."
 	$(PYTHON) $(MAIN) --mode evaluate --episodes $(EPISODES_EVAL) --model $(MODEL_Q_LEARNING_RANDOM_MAP) --board_size 0 --training_method q_learning --model_folder_path $(MODEL_Q_LEARNING_RANDOM_MAP_FOLDER)
 
-# Evaluate Q-Learning multithreaded agent performance on fixed-size board (1000 episodes)
-evaluate_multithreaded: check
-	@echo "Evaluating multithreaded Q-Learning agent ($(EPISODES_EVAL) episodes)..."
-	$(PYTHON) $(MAIN) --mode evaluate --episodes $(EPISODES_EVAL) --model $(MODEL_Q_LEARNING_MULTITHREADED) --board_size $(BOARD_SIZE) --training_method q_learning_multithreaded --model_folder_path $(MODEL_Q_LEARNING_FOLDER_MULTITHREADED)
-
-# Evaluate Q-Learning multithreaded agent performance on random board sizes
-evaluate_random_map_multithreaded: check
-	@echo "Evaluating multithreaded Q-Learning agent on random maps ($(EPISODES_EVAL) episodes)..."
-	$(PYTHON) $(MAIN) --mode evaluate --episodes $(EPISODES_EVAL) --model $(MODEL_Q_LEARNING_RANDOM_MAP_MULTITHREADED) --board_size 0 --training_method q_learning_multithreaded --model_folder_path $(MODEL_Q_LEARNING_RANDOM_MAP_FOLDER_MULTITHREADED)
-
 # Evaluate Deep Q-Learning agent performance (1000 episodes for thorough testing)
 evaluate_deep_q_learning: check
 	@echo "Evaluating Deep Q-Learning agent ($(EPISODES_EVAL) episodes)..."
@@ -199,16 +153,6 @@ evaluate_deep_q_learning: check
 evaluate_random_map_deep_q_learning: check
 	@echo "Evaluating Deep Q-Learning agent on random maps (100 episodes)..."
 	$(PYTHON) $(MAIN) --mode evaluate --episodes 100 --model $(MODEL_DEEP_LEARNING_RANDOM_MAP) --board_size 0 --training_method deep_q_learning --model_folder_path $(MODEL_DEEP_LEARNING_RANDOM_MAP_FOLDER)
-
-# Evaluate Deep Q-Learning agent with full map representation (1000 episodes)
-evaluate_deep_q_learning_full_map: check
-	@echo "Evaluating Deep Q-Learning Full Map agent ($(EPISODES_EVAL) episodes)..."
-	$(PYTHON) $(MAIN) --mode evaluate --episodes $(EPISODES_EVAL) --model $(MODEL_DEEP_LEARNING_FULL_MAP) --board_size $(BOARD_SIZE) --training_method deep_q_learning_full_map --model_folder_path $(MODEL_DEEP_LEARNING_FULL_MAP_FOLDER)
-
-# Evaluate Deep Q-Learning agent with full map on random board sizes (100 episodes)
-evaluate_deep_q_learning_full_map_random_map: check
-	@echo "Evaluating Deep Q-Learning Full Map agent on random maps (100 episodes)..."
-	$(PYTHON) $(MAIN) --mode evaluate --episodes 100 --model $(MODEL_DEEP_LEARNING_FULL_MAP_RANDOM_MAP) --board_size 0 --training_method deep_q_learning_full_map --model_folder_path $(MODEL_DEEP_LEARNING_FULL_MAP_RANDOM_MAP_FOLDER)
 
 # ============================================================================#
 # GAMEPLAY TARGETS                                                            #
@@ -224,16 +168,6 @@ play_random_map: check
 	@echo "Starting Q-Learning agent gameplay on random maps..."
 	$(PYTHON) $(MAIN) --mode play --model $(MODEL_Q_LEARNING_RANDOM_MAP) --board_size 0 --display_speed $(DISPLAY_SPEED) --render_mode classic --training_method q_learning --model_folder_path $(MODEL_Q_LEARNING_RANDOM_MAP_FOLDER)
 
-# Watch the Q-Learning multithreaded agent play with visual rendering on fixed-size board
-play_multithreaded: check
-	@echo "Starting multithreaded Q-Learning agent gameplay..."
-	$(PYTHON) $(MAIN) --mode play --model $(MODEL_Q_LEARNING_MULTITHREADED) --board_size $(BOARD_SIZE) --display_speed $(DISPLAY_SPEED) --render_mode classic --training_method q_learning_multithreaded --model_folder_path $(MODEL_Q_LEARNING_FOLDER_MULTITHREADED)
-
-# Watch the Q-Learning multithreaded agent play on random board sizes (5-20)
-play_random_map_multithreaded: check
-	@echo "Starting multithreaded Q-Learning agent gameplay on random maps..."
-	$(PYTHON) $(MAIN) --mode play --model $(MODEL_Q_LEARNING_RANDOM_MAP_MULTITHREADED) --board_size 0 --display_speed $(DISPLAY_SPEED) --render_mode classic --training_method q_learning_multithreaded --model_folder_path $(MODEL_Q_LEARNING_RANDOM_MAP_FOLDER_MULTITHREADED)
-
 # Watch the Deep Q-Learning agent play with visual rendering
 play_deep_q_learning: check
 	@echo "Starting Deep Q-Learning agent gameplay..."
@@ -243,16 +177,6 @@ play_deep_q_learning: check
 play_random_map_deep_q_learning: check
 	@echo "Starting Deep Q-Learning agent gameplay on random maps..."
 	$(PYTHON) $(MAIN) --mode play --model $(MODEL_DEEP_LEARNING_RANDOM_MAP) --board_size 0 --display_speed $(DISPLAY_SPEED) --render_mode classic --training_method deep_q_learning --model_folder_path $(MODEL_DEEP_LEARNING_RANDOM_MAP_FOLDER)
-
-# Watch the Deep Q-Learning agent with full map representation play
-play_deep_q_learning_full_map: check
-	@echo "Starting Deep Q-Learning Full Map agent gameplay..."
-	$(PYTHON) $(MAIN) --mode play --model $(MODEL_DEEP_LEARNING_FULL_MAP) --board_size $(BOARD_SIZE) --display_speed $(DISPLAY_SPEED) --render_mode classic --training_method deep_q_learning_full_map --model_folder_path $(MODEL_DEEP_LEARNING_FULL_MAP_FOLDER)
-
-# Watch the Deep Q-Learning agent with full map play on random board sizes
-play_deep_q_learning_full_map_random_map: check
-	@echo "Starting Deep Q-Learning Full Map agent gameplay on random maps..."
-	$(PYTHON) $(MAIN) --mode play --model $(MODEL_DEEP_LEARNING_FULL_MAP_RANDOM_MAP) --board_size 0 --display_speed $(DISPLAY_SPEED) --render_mode classic --training_method deep_q_learning_full_map --model_folder_path $(MODEL_DEEP_LEARNING_FULL_MAP_RANDOM_MAP_FOLDER)
 
 # ============================================================================#
 # INTERACTIVE TARGETS                                                         #
@@ -291,9 +215,7 @@ info:
 	@echo ""
 	@echo "Available models:"
 	@test -f $(MODEL_Q_LEARNING) && echo "  ✓ Q-Learning model" || echo "  ✗ Q-Learning model (not trained)"
-	@test -f $(MODEL_Q_LEARNING_MULTITHREADED) && echo "  ✓ Multithreaded Q-Learning model" || echo "  ✗ Multithreaded Q-Learning model (not trained)"
 	@test -f $(MODEL_DEEP_LEARNING) && echo "  ✓ Deep Q-Learning model" || echo "  ✗ Deep Q-Learning model (not trained)"
-	@test -f $(MODEL_DEEP_LEARNING_FULL_MAP) && echo "  ✓ Deep Q-Learning Full Map model" || echo "  ✗ Deep Q-Learning Full Map model (not trained)"
 	@echo "============================================================================"
 
 # ============================================================================#
@@ -316,35 +238,22 @@ help:
 	@echo "TRAINING COMMANDS:"
 	@echo "  make train                               - Train Q-Learning agent (fixed board)"
 	@echo "  make train_random_map                    - Train Q-Learning agent (random board sizes)"
-	@echo "  make train_multithreaded                 - Train Q-Learning agent (fixed board, multithreaded)"
-	@echo "  make train_multithreaded_performance     - Train Q-Learning agent (maximum CPU utilization)"  
-	@echo "  make train_random_map_multithreaded      - Train Q-Learning agent (random boards, multithreaded)"
 	@echo "  make train_deep_q_learning               - Train Deep Q-Learning agent (neural network)"
 	@echo "  make train_deep_q_learning_random_map    - Train Deep Q-Learning (random boards)"
-	@echo "  make train_deep_q_learning_full_map      - Train Deep Q-Learning Full Map (fixed board)"
-	@echo "  make train_deep_q_learning_full_map_random_map - Train Deep Q-Learning Full Map (random boards)"
 	@echo "  make train_all                           - Train all main models sequentially"
 	@echo ""
 	@echo "EVALUATION COMMANDS:"
 	@echo "  make evaluate                            - Evaluate Q-Learning agent ($(EPISODES_EVAL) episodes)"
 	@echo "  make evaluate_random_map                 - Evaluate Q-Learning agent (random boards)"
-	@echo "  make evaluate_multithreaded              - Evaluate Q-Learning agent (multithreaded)"
-	@echo "  make evaluate_random_map_multithreaded   - Evaluate Q-Learning agent (random boards, multithreaded)"
 	@echo "  make evaluate_deep_q_learning            - Evaluate Deep Q-Learning ($(EPISODES_EVAL) episodes)"
 	@echo "  make evaluate_random_map_deep_q_learning - Evaluate Deep Q-Learning (random boards)"
-	@echo "  make evaluate_deep_q_learning_full_map   - Evaluate Deep Q-Learning Full Map ($(EPISODES_EVAL) episodes)"
-	@echo "  make evaluate_deep_q_learning_full_map_random_map - Evaluate Deep Q-Learning Full Map (random boards)"
 	@echo "  make evaluate_all                        - Evaluate all models on fixed board"
 	@echo ""
 	@echo "GAMEPLAY COMMANDS:"
 	@echo "  make play                                - Watch Q-Learning agent play ($(BOARD_SIZE)x$(BOARD_SIZE) board)"
 	@echo "  make play_random_map                     - Watch Q-Learning agent (random boards 5-20)"
-	@echo "  make play_multithreaded                  - Watch Q-Learning agent play (multithreaded)"
-	@echo "  make play_random_map_multithreaded       - Watch Q-Learning agent (random boards, multithreaded)"
 	@echo "  make play_deep_q_learning                - Watch Deep Q-Learning agent play"
 	@echo "  make play_random_map_deep_q_learning     - Watch Deep Q-Learning (random boards)"
-	@echo "  make play_deep_q_learning_full_map       - Watch Deep Q-Learning Full Map agent play"
-	@echo "  make play_deep_q_learning_full_map_random_map - Watch Deep Q-Learning Full Map (random boards)"
 	@echo ""
 	@echo "INTERACTIVE COMMANDS:"
 	@echo "  make manual                              - Play Snake manually (keyboard controls)"
