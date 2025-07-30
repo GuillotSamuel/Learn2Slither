@@ -25,7 +25,7 @@ The agent learns to navigate the environment, avoid obstacles, collect food, and
 
 ### Training Methods
 
-Learn2Slither implements **three distinct reinforcement learning approaches**:
+Learn2Slither implements **two distinct reinforcement learning approaches**:
 
 #### 1. Traditional Q-Learning
 - **Table-based approach**: Direct state-action value mapping
@@ -44,13 +44,6 @@ Learn2Slither implements **three distinct reinforcement learning approaches**:
   - Output layer: 64 → 3 neurons
   - Activation: ReLU
   - Dropout: 10% to prevent overfitting
-
-#### 3. Multithreaded Q-Learning
-- **Parallel training**: Multiple threads with local Q-tables
-- **Automatic optimization**: Dynamic thread count based on CPU cores
-- **Smart synchronization**: Periodic merging of local improvements
-- **Central coordination**: Shared Q-table with thread-safe operations
-- **Scalable performance**: Up to 32 threads with intelligent load balancing
 
 ### State Representation
 
@@ -84,14 +77,13 @@ The game state is encoded in a **16-dimensional vector**:
 ## ✨ Features
 
 - 🎮 **4 game modes**: training, evaluation, automatic play, manual play
-- 🧠 **3 AI training methods**: Traditional Q-Learning, Deep Q-Learning, Multithreaded Q-Learning
+- 🧠 **2 AI training methods**: Traditional Q-Learning, Deep Q-Learning
 - 🎨 **2 render modes**: basic (console) and classic (graphics)
 - 📊 **Real-time metrics**: score, length, performance ratio
 - 📈 **Performance visualization**: saved training graphs with detailed analytics
 - 🎯 **Variable board sizes**: from 5x5 to 20x20, or random size generation
 - 💾 **Automatic saving**: models saved at different training stages
 - 🚀 **Evaluation mode**: comprehensive performance testing over multiple episodes
-- ⚡ **Multithreaded training**: parallel learning with automatic thread optimization
 - 🎲 **Random map training**: enhanced generalization across different board sizes
 - 🏆 **Advanced metrics**: rolling statistics, convergence tracking, memory usage monitoring
 
@@ -151,10 +143,6 @@ The project includes a comprehensive Makefile to simplify common commands:
 make train                          # Train on fixed 10x10 board
 make train_random_map              # Train on random board sizes (5-20)
 
-# Multithreaded Q-Learning training  
-make train_multithreaded           # Parallel training on fixed board
-make train_random_map_multithreaded # Parallel training on random boards
-
 # Deep Q-Learning training
 make train_deep_q_learning         # Neural network on fixed board
 make train_deep_q_learning_random_map # Neural network on random boards
@@ -163,16 +151,14 @@ make train_deep_q_learning_random_map # Neural network on random boards
 #### Evaluation Commands
 ```bash
 # Comprehensive evaluation
-make evaluate_all                  # Test all three methods
+make evaluate_all                  # Test both training methods
 
 # Individual method evaluation
 make evaluate                      # Q-Learning evaluation
-make evaluate_multithreaded        # Multithreaded Q-Learning
 make evaluate_deep_q_learning      # Deep Q-Learning evaluation
 
 # Random map evaluation
 make evaluate_random_map           # Q-Learning on random boards
-make evaluate_random_map_multithreaded # Multithreaded on random boards
 make evaluate_random_map_deep_q_learning # Deep Q-Learning on random boards
 ```
 
@@ -180,12 +166,10 @@ make evaluate_random_map_deep_q_learning # Deep Q-Learning on random boards
 ```bash
 # Watch AI play
 make play                          # Q-Learning agent
-make play_multithreaded           # Multithreaded Q-Learning agent
 make play_deep_q_learning         # Deep Q-Learning agent
 
 # Random map gameplay
 make play_random_map              # Q-Learning on random boards
-make play_random_map_multithreaded # Multithreaded on random boards
 make play_random_map_deep_q_learning # Deep Q-Learning on random boards
 
 # Manual control
@@ -203,11 +187,6 @@ make clean                         # Clean generated files
 #### Traditional Q-Learning
 ```bash
 python src/main.py --mode train --episodes 1000000 --training_method q_learning --board_size 10
-```
-
-#### Multithreaded Q-Learning
-```bash
-python src/main.py --mode train --episodes 1000000 --training_method q_learning_multithreaded --board_size 10
 ```
 
 #### Deep Q-Learning
@@ -254,7 +233,7 @@ python src/main.py --mode manual --render_mode classic
 
 | Option | Description | Possible Values | Default |
 |--------|-------------|-----------------|---------|
-| `--training_method` | AI training algorithm | `q_learning`, `deep_q_learning`, `q_learning_multithreaded` | `q_learning` |
+| `--training_method` | AI training algorithm | `q_learning`, `deep_q_learning` | `q_learning` |
 | `--episodes` | Number of training/evaluation episodes | Integer ≥ 100 | 10000 |
 | `--board_size` | Board dimensions | 5-30, or 0 for random (5-20) | 10 |
 | `--display_speed` | Animation speed (seconds) | Float > 0 | 0.1 |
@@ -288,10 +267,8 @@ Learn2Slither/
 │   │   ├── mid_model.pkl                # Model at mid-training
 │   │   ├── end_model.pkl                # Final trained model
 │   │   └── training_metrics.png         # Performance graphs
-│   ├── models_eval_q_learning_multithreaded/  # Multithreaded Q-Learning
 │   ├── models_eval_deep_q/              # Deep Q-Learning models
 │   ├── models_random_map_q_learning/    # Q-Learning on random boards
-│   ├── models_random_map_q_learning_multithreaded/  # Multithreaded random
 │   └── models_random_map_deep_q/        # Deep Q-Learning random
 ├── requirements.txt              # Python dependencies
 ├── Makefile                      # Comprehensive build automation
@@ -301,7 +278,7 @@ Learn2Slither/
 ### Model Organization
 
 Models are systematically organized by:
-- **Training method**: Q-Learning, Deep Q-Learning, Multithreaded
+- **Training method**: Q-Learning, Deep Q-Learning
 - **Map type**: Fixed size (eval) vs Random size (random_map)  
 - **Training stages**: Progressive saves during training
 - **Performance metrics**: Automatic graph generation
@@ -317,28 +294,12 @@ Models are systematically organized by:
 - **Memory usage**: ~50-100 MB Q-table storage
 - **Convergence**: ~500K-800K episodes for stable policy
 
-#### Multithreaded Q-Learning  
-- **Maximum length achieved**: 35-45 (improved through parallel exploration)
-- **Average length**: ~28-35 after complete training
-- **Training time**: ~15-25 minutes (3-4x speedup with optimal threading)
-- **Memory usage**: ~100-200 MB (central + local Q-tables)
-- **Convergence**: ~300K-600K episodes (faster due to parallel learning)
-- **Thread efficiency**: Automatic optimization (2-32 threads based on CPU)
-
 #### Deep Q-Learning
 - **Maximum length achieved**: 30-38 (neural network approach)
 - **Average length**: ~22-28 after complete training (10K episodes)
 - **Training time**: ~20-30 minutes (fewer episodes needed)
 - **Memory usage**: ~10-20 MB (compact neural network)
 - **Convergence**: ~5K-8K episodes for stable model
-
-### Training Performance Comparison
-
-| Method | Max Length | Avg Length | Training Time | Episodes | Memory Usage |
-|--------|------------|------------|---------------|----------|--------------|
-| Q-Learning | 35-40 | 25-30 | 45-60 min | 1M | 50-100 MB |
-| Multithreaded Q-Learning | 35-45 | 28-35 | 15-25 min | 1M | 100-200 MB |
-| Deep Q-Learning | 30-38 | 22-28 | 20-30 min | 10K | 10-20 MB |
 
 ### Generated Performance Analytics
 
@@ -355,29 +316,20 @@ The system automatically generates comprehensive performance visualizations:
 
 ### Advanced Features Implemented
 
-- ✅ **Multiple AI algorithms**: Traditional Q-Learning, Deep Q-Learning, and Multithreaded Q-Learning
-- ✅ **Multithreaded training**: Parallel learning with automatic thread optimization (2-32 threads)
+- ✅ **Multiple AI algorithms**: Traditional Q-Learning and Deep Q-Learning
 - ✅ **Deep neural networks**: MLP architecture with dropout and advanced optimization
 - ✅ **Performance graphs**: Comprehensive visualization of training metrics with rolling statistics
-- ✅ **Length records**: Consistent achievement of 35+ length across all methods
+- ✅ **Length records**: Consistent achievement of 35+ length across both methods
 - ✅ **Random board training**: Enhanced generalization across different map sizes (5x5 to 20x20)
 - ✅ **Multiple render modes**: Console-based and graphical interfaces with classic Snake assets
 - ✅ **Adaptive reward system**: "Ultra rewards" mode for optimized learning signals
 - ✅ **Intelligent model management**: Automatic saving at strategic training milestones
 - ✅ **Comprehensive CLI**: Advanced parameterization with 10+ configuration options
-- ✅ **Production-ready Makefile**: 25+ automated commands for all training/evaluation scenarios
+- ✅ **Production-ready Makefile**: 20+ automated commands for all training/evaluation scenarios
 - ✅ **Memory optimization**: Efficient Q-table storage and neural network compression
-- ✅ **Thread-safe architecture**: Lock-based synchronization for parallel training
-- ✅ **Automatic resource detection**: CPU-aware thread allocation and system load monitoring
+- ✅ **Automatic resource detection**: CPU-aware system load monitoring
 
 ### Technical Innovations
-
-#### Multithreaded Q-Learning Architecture
-- **Local Q-tables**: Each thread maintains independent learning state
-- **Central coordination**: Periodic synchronization with weighted averaging
-- **Smart merging**: 90% local knowledge + 10% central improvements
-- **Deadlock prevention**: Thread-safe operations with timeout mechanisms
-- **Load balancing**: Dynamic thread allocation based on system resources
 
 #### Enhanced State Encoding
 - **16-dimensional state space**: Comprehensive environmental awareness
@@ -390,7 +342,7 @@ The system automatically generates comprehensive performance visualizations:
 - **Adaptive epsilon decay**: Dynamic exploration-exploitation balance
 - **Early stopping**: Automatic termination based on convergence metrics
 - **Memory monitoring**: Q-table size tracking and optimization alerts
-- **Cross-method evaluation**: Unified evaluation framework for all algorithms
+- **Cross-method evaluation**: Unified evaluation framework for both algorithms
 
 ## 👨‍💻 Contributors
 
